@@ -24,10 +24,13 @@ export default function SquadBoard({
   squad: serverSquad,
   tripleCaptain = false,
   benchBoost = false,
+  locked = false,
 }: {
   squad: Player[];
   tripleCaptain?: boolean;
   benchBoost?: boolean;
+  /** Deadline passée : équipe verrouillée jusqu'à la clôture. */
+  locked?: boolean;
 }) {
   const [squad, setSquad] = useState(serverSquad);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -111,7 +114,15 @@ export default function SquadBoard({
     <div>
       {/* Barre d'action */}
       <div className="mb-3 min-h-11 rounded-xl border border-edge bg-surface px-3 py-2">
-        {selected ? (
+        {locked ? (
+          <p className="py-1 text-xs font-semibold text-warning">
+            Deadline passée — équipe verrouillée jusqu&apos;à la clôture de la
+            journée.
+            <span className="ml-2 font-normal text-muted">
+              Formation {getFormationLabel(starters)}
+            </span>
+          </p>
+        ) : selected ? (
           <div className="flex flex-wrap items-center gap-2">
             <p className="mr-auto text-sm">
               <span className="font-semibold">{selected.name}</span>{" "}
@@ -158,7 +169,7 @@ export default function SquadBoard({
 
       <Pitch
         starters={starters}
-        onPlayerClick={handlePlayerClick}
+        onPlayerClick={locked ? undefined : handlePlayerClick}
         selectedId={selectedId}
         eligibleIds={eligibleIds}
         swapMode={swapMode}
@@ -166,7 +177,7 @@ export default function SquadBoard({
       />
       <Bench
         players={bench}
-        onPlayerClick={handlePlayerClick}
+        onPlayerClick={locked ? undefined : handlePlayerClick}
         selectedId={selectedId}
         eligibleIds={eligibleIds}
         swapMode={swapMode}

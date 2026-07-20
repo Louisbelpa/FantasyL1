@@ -28,6 +28,7 @@ export default function TransfersView({
   initialBank,
   freeTransfers,
   unlimitedChipLabel = null,
+  locked = false,
 }: {
   initialSquad: Player[];
   market: Player[];
@@ -35,6 +36,8 @@ export default function TransfersView({
   freeTransfers: number;
   /** Libellé du jeton actif rendant les transferts gratuits (Joker/Free Hit). */
   unlimitedChipLabel?: string | null;
+  /** Deadline passée : transferts verrouillés jusqu'à la clôture. */
+  locked?: boolean;
 }) {
   // Effectif « sauvegardé » : la référence pour compter les transferts.
   const [savedSquad, setSavedSquad] = useState(initialSquad);
@@ -85,12 +88,13 @@ export default function TransfersView({
     });
 
   function sell(player: Player) {
+    if (locked) return;
     setConfirmed(false);
     setOutgoingId((id) => (id === player.id ? null : player.id));
   }
 
   function buy(player: Player) {
-    if (!outgoing || buyBlockReason(squad, bank, outgoing, player)) return;
+    if (locked || !outgoing || buyBlockReason(squad, bank, outgoing, player)) return;
     setSquad((s) => swapPlayer(s, outgoing, player));
     setOutgoingId(null);
   }
@@ -140,20 +144,26 @@ export default function TransfersView({
           <div className="ml-auto flex gap-2">
             <button
               onClick={reset}
-              disabled={transfers === 0 && !outgoing}
+              disabled={locked || (transfers === 0 && !outgoing)}
               className="rounded-lg border border-edge px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:text-foreground disabled:opacity-40"
             >
               Réinitialiser
             </button>
             <button
               onClick={confirm}
-              disabled={transfers === 0 || saving}
+              disabled={locked || transfers === 0 || saving}
               className="rounded-lg bg-accent px-4 py-1.5 text-xs font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {saving ? "Enregistrement…" : "Confirmer"}
             </button>
           </div>
         </div>
+        {locked ? (
+          <p className="mt-2 text-xs font-semibold text-warning">
+            Deadline passée — transferts verrouillés jusqu&apos;à la clôture de
+            la journée.
+          </p>
+        ) : null}
         {unlimitedChipLabel ? (
           <p className="mt-2 text-xs font-semibold text-accent">
             {`${unlimitedChipLabel} actif — transferts illimités et gratuits jusqu'à la deadline.`}
@@ -201,7 +211,8 @@ export default function TransfersView({
                         action={
                           <button
                             onClick={() => sell(p)}
-                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                            disabled={locked}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40 ${
                               outgoingId === p.id
                                 ? "bg-danger text-background"
                                 : "border border-edge text-muted hover:text-foreground"
@@ -296,7 +307,7 @@ export default function TransfersView({
                   const block = outgoing
                     ? buyBlockReason(squad, bank, outgoing, p)
                     : null;
-                  const disabled = !outgoing || block !== null;
+                  const disabled = locked || !outgoing || block !== null;
                   return (
                     <PlayerRow
                       key={p.id}

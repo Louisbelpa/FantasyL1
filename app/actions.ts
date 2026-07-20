@@ -11,6 +11,7 @@ import {
 } from "@/lib/api/apiFootball";
 import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
 import { gameweek as mockGameweek, marketPlayers, players } from "@/lib/data";
+import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { findLeagueByCode, findLeagueById } from "@/lib/leagues";
 import { settleGameweek } from "@/lib/settlement";
 import { simulateGameweekStats } from "@/lib/simulate";
@@ -26,10 +27,23 @@ import { computeBank, countTransfers } from "@/lib/transfers";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
+/** Équipe verrouillée entre la deadline et la clôture de la journée. */
+function deadlineBlock(team: Awaited<ReturnType<typeof getTeam>>): ActionResult | null {
+  const gameweek = currentGameweek(team);
+  if (isDeadlinePassed(gameweek))
+    return {
+      ok: false,
+      error: `Deadline de la ${gameweek.name} passée : équipe verrouillée jusqu'à la clôture de la journée.`,
+    };
+  return null;
+}
+
 async function mutateSquad(
   mutate: (squad: Player[]) => Player[] | string,
 ): Promise<ActionResult> {
   const team = await getTeam();
+  const blocked = deadlineBlock(team);
+  if (blocked) return blocked;
   const result = mutate(team.squad);
   if (typeof result === "string") return { ok: false, error: result };
   const invalid = squadInvalidReason(result);
@@ -64,6 +78,8 @@ export async function activateChipAction(chip: ChipName): Promise<ActionResult> 
   if (!CHIP_INFO[chip]) return { ok: false, error: "Jeton inconnu." };
 
   const team = await getTeam();
+  const blocked = deadlineBlock(team);
+  if (blocked) return blocked;
   if (team.chips[chip] === "used")
     return { ok: false, error: `« ${CHIP_INFO[chip].label} » a déjà été consommé cette saison.` };
   if (team.chips[chip] === "active")
@@ -96,6 +112,8 @@ export async function deactivateChipAction(chip: ChipName): Promise<ActionResult
   if (!CHIP_INFO[chip]) return { ok: false, error: "Jeton inconnu." };
 
   const team = await getTeam();
+  const blocked = deadlineBlock(team);
+  if (blocked) return blocked;
   if (team.chips[chip] !== "active")
     return { ok: false, error: `« ${CHIP_INFO[chip].label} » n'est pas actif.` };
 
@@ -319,6 +337,8 @@ export interface SquadEntry {
  */
 export async function saveTransfersAction(entries: SquadEntry[]): Promise<ActionResult> {
   const team = await getTeam();
+  const blocked = deadlineBlock(team);
+  if (blocked) return blocked;
   const pool = new Map<number, Player>(
     [...players, ...marketPlayers, ...(team.catalogue ?? [])].map((p) => [p.id, p]),
   );

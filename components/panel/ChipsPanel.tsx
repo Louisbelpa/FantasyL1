@@ -9,7 +9,14 @@ import { activeChip, CHIP_INFO, CHIP_NAMES } from "@/lib/chips";
  * Jetons bonus à la FPL : un seul actif par journée, usage unique par
  * saison. Désactiver le Free Hit restaure l'équipe sauvegardée.
  */
-export default function ChipsPanel({ chips }: { chips: Chips }) {
+export default function ChipsPanel({
+  chips,
+  locked = false,
+}: {
+  chips: Chips;
+  /** Deadline passée : activation/désactivation bloquées. */
+  locked?: boolean;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const current = activeChip(chips);
@@ -33,8 +40,8 @@ export default function ChipsPanel({ chips }: { chips: Chips }) {
             key={name}
             name={name}
             status={chips[name]}
-            lockActivation={current !== null}
-            disabled={isPending}
+            lockActivation={current !== null || locked}
+            disabled={isPending || locked}
             onActivate={() => run(() => activateChipAction(name))}
             onDeactivate={() => run(() => deactivateChipAction(name))}
           />
@@ -44,7 +51,9 @@ export default function ChipsPanel({ chips }: { chips: Chips }) {
         <p className="mt-3 text-xs font-semibold text-danger">{error}</p>
       ) : null}
       <p className="mt-3 text-[11px] text-muted">
-        Un seul jeton actif par journée, chacun utilisable une fois par saison.
+        {locked
+          ? "Deadline passée : les jetons sont verrouillés jusqu'à la clôture."
+          : "Un seul jeton actif par journée, chacun utilisable une fois par saison."}
       </p>
     </section>
   );

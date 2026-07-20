@@ -3,6 +3,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import TransfersView from "@/components/transfers/TransfersView";
 import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
 import { marketPlayers, players } from "@/lib/data";
+import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Transferts" };
@@ -28,6 +29,7 @@ export default async function TransfertsPage() {
         unlimitedChipLabel={
           chip && transfersUnlimited(team.chips) ? CHIP_INFO[chip].label : null
         }
+        locked={isDeadlinePassed(currentGameweek(team))}
       />
     </main>
   );

@@ -5,7 +5,8 @@ import ChipsPanel from "@/components/panel/ChipsPanel";
 import DataSyncPanel from "@/components/panel/DataSyncPanel";
 import StatsPanel from "@/components/panel/StatsPanel";
 import { activeChip, CHIP_INFO } from "@/lib/chips";
-import { gameweek as mockGameweek, managerStats } from "@/lib/data";
+import { managerStats } from "@/lib/data";
+import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { computeTeamGameweekPoints } from "@/lib/scoring";
 import { getTeam } from "@/lib/store";
 
@@ -19,7 +20,8 @@ export default async function Home() {
   const teamValue =
     Math.round(team.squad.reduce((acc, p) => acc + p.price, 0) * 10) / 10;
   const chip = activeChip(team.chips);
-  const gameweek = team.apiGameweek ?? mockGameweek;
+  const gameweek = currentGameweek(team);
+  const locked = isDeadlinePassed(gameweek);
   const gameweekPoints = computeTeamGameweekPoints(team.squad, team.chips);
 
   return (
@@ -33,6 +35,7 @@ export default async function Home() {
           squad={team.squad}
           tripleCaptain={chip === "tripleCaptain"}
           benchBoost={chip === "benchBoost"}
+          locked={locked}
         />
         <div className="flex flex-col gap-4">
           <StatsPanel
@@ -47,7 +50,7 @@ export default async function Home() {
             gameweek={gameweek}
             activeChipLabel={chip ? CHIP_INFO[chip].label : null}
           />
-          <ChipsPanel chips={team.chips} />
+          <ChipsPanel chips={team.chips} locked={locked} />
           <DataSyncPanel
             dataSource={team.dataSource}
             lastSyncAt={team.lastSyncAt}
