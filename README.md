@@ -18,6 +18,25 @@ npm run dev
 
 Ouvrir [http://localhost:3000](http://localhost:3000).
 
+## Données réelles (API-Football)
+
+Par défaut l'application tourne sur les mocks de `data/`. Pour brancher les
+vraies données Ligue 1 :
+
+1. Créer une clé gratuite (100 req/jour) sur
+   [dashboard.api-football.com](https://dashboard.api-football.com)
+2. `cp .env.local.example .env.local` puis renseigner `API_FOOTBALL_KEY`
+3. Redémarrer le serveur et cliquer **Synchroniser** dans le panneau
+   « Données » de la page Mon Équipe
+
+La synchronisation importe le catalogue des joueurs de Ligue 1 (~500) et la
+prochaine journée (deadline = 1 h avant le premier coup d'envoi) dans le
+store. Le marché des transferts bascule alors sur les vrais joueurs —
+activez le Joker pour reconstruire votre équipe sans limite. Les points
+fantasy sont calculés par `lib/scoring.ts` (barème FPL) à partir des stats
+brutes de `lib/api/apiFootball.ts` (`fetchFixturePlayerStats`) ; les prix
+restent une donnée de jeu générée par une heuristique à affiner.
+
 ## Structure
 
 ```

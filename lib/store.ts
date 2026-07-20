@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import type { Chips, League, Player } from "@/types";
+import type { Chips, DataSource, Gameweek, League, Player } from "@/types";
 import { defaultChips } from "@/lib/chips";
 import { managerStats, players } from "@/lib/data";
 
@@ -24,6 +24,12 @@ export interface TeamState {
   chips: Chips;
   /** Équipe sauvegardée à l'activation du Free Hit, restaurée ensuite. */
   freeHitSnapshot: { squad: Player[]; bank: number } | null;
+  /** Catalogue de joueurs synchronisé depuis l'API (null = mocks). */
+  catalogue: Player[] | null;
+  /** Journée synchronisée depuis l'API (null = mock). */
+  apiGameweek: Gameweek | null;
+  dataSource: DataSource;
+  lastSyncAt: string | null;
   updatedAt: string;
 }
 
@@ -38,6 +44,10 @@ function seed(): TeamState {
     customLeagues: [],
     chips: defaultChips(),
     freeHitSnapshot: null,
+    catalogue: null,
+    apiGameweek: null,
+    dataSource: "mock",
+    lastSyncAt: null,
     updatedAt: new Date(0).toISOString(),
   };
 }

@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import type { ChipName, League, Player } from "@/types";
+import {
+  fetchCatalogue,
+  fetchNextGameweek,
+  isApiConfigured,
+} from "@/lib/api/apiFootball";
 import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
 import { marketPlayers, players } from "@/lib/data";
 import { findLeagueByCode, findLeagueById } from "@/lib/leagues";
@@ -103,6 +108,67 @@ export async function deactivateChipAction(chip: ChipName): Promise<ActionResult
   return { ok: true };
 }
 
+/**
+ * Synchronise catalogue de joueurs et journée depuis API-Football vers
+ * le store. Les joueurs de l'effectif présents dans le catalogue sont
+ * rafraîchis (statut, adversaire) en conservant leurs rôles et leur
+ * prix d'achat ; les autres (mocks) restent tels quels — activez le
+ * Joker pour reconstruire l'équipe avec les vrais joueurs.
+ */
+export async function syncFromApiAction(): Promise<ActionResult> {
+  if (!isApiConfigured())
+    return {
+      ok: false,
+      error:
+        "Clé API absente. Copiez .env.local.example vers .env.local, renseignez API_FOOTBALL_KEY (gratuit sur api-football.com), puis redémarrez le serveur.",
+    };
+
+  try {
+    const { gameweek, opponents } = await fetchNextGameweek();
+    const catalogue = await fetchCatalogue(opponents);
+    if (catalogue.length === 0)
+      return {
+        ok: false,
+        error:
+          "Synchronisation vide : vérifiez la saison (API_FOOTBALL_SEASON) et le mapping des clubs.",
+      };
+
+    const team = await getTeam();
+    const byId = new Map(catalogue.map((p) => [p.id, p]));
+    const squad = team.squad.map((p) => {
+      const fresh = byId.get(p.id);
+      return fresh
+        ? {
+            ...fresh,
+            price: p.price,
+            isStarter: p.isStarter,
+            isCaptain: p.isCaptain,
+            isViceCaptain: p.isViceCaptain,
+          }
+        : p;
+    });
+
+    await saveTeam({
+      ...team,
+      squad,
+      catalogue,
+      apiGameweek: gameweek,
+      dataSource: "api",
+      lastSyncAt: new Date().toISOString(),
+    });
+    revalidatePath("/");
+    revalidatePath("/transferts");
+    return { ok: true };
+  } catch (cause) {
+    return {
+      ok: false,
+      error: `Échec de la synchronisation : ${
+        cause instanceof Error ? cause.message : String(cause)
+      }`,
+    };
+  }
+}
+
 /** Rejoint une ligue via son code d'invitation. */
 export async function joinLeagueAction(code: string): Promise<ActionResult> {
   const trimmed = code.trim();
@@ -189,8 +255,9 @@ export interface SquadEntry {
  * persister.
  */
 export async function saveTransfersAction(entries: SquadEntry[]): Promise<ActionResult> {
+  const team = await getTeam();
   const pool = new Map<number, Player>(
-    [...players, ...marketPlayers].map((p) => [p.id, p]),
+    [...players, ...marketPlayers, ...(team.catalogue ?? [])].map((p) => [p.id, p]),
   );
 
   const squad: Player[] = [];
@@ -210,7 +277,6 @@ export async function saveTransfersAction(entries: SquadEntry[]): Promise<Action
   const invalid = squadInvalidReason(squad);
   if (invalid) return { ok: false, error: invalid };
 
-  const team = await getTeam();
   const bank = computeBank(team.bank, team.squad, squad);
   if (bank < 0) return { ok: false, error: "Budget insuffisant." };
 

@@ -42,3 +42,4 @@ next-env.d.ts
 
 # Store serveur local (persistance mock)
 .store/
+!.env.local.example

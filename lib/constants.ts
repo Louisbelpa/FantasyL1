@@ -13,6 +13,12 @@ export const CLUBS: Record<ClubCode, Club> = {
   TFC: { code: "TFC", name: "Toulouse FC", primary: "#5f3a8e", secondary: "#f4f6f9" },
   RCSA: { code: "RCSA", name: "RC Strasbourg", primary: "#2196f3", secondary: "#f4f6f9" },
   FCN: { code: "FCN", name: "FC Nantes", primary: "#fdd835", secondary: "#1b5e20" },
+  AJA: { code: "AJA", name: "AJ Auxerre", primary: "#f4f6f9", secondary: "#1b4c9c" },
+  SCO: { code: "SCO", name: "Angers SCO", primary: "#111827", secondary: "#f4f6f9" },
+  HAC: { code: "HAC", name: "Le Havre AC", primary: "#5cb3e6", secondary: "#12305c" },
+  FCM: { code: "FCM", name: "FC Metz", primary: "#8a1538", secondary: "#f4f6f9" },
+  FCL: { code: "FCL", name: "FC Lorient", primary: "#ff7f27", secondary: "#111827" },
+  PFC: { code: "PFC", name: "Paris FC", primary: "#12305c", secondary: "#f4f6f9" },
 };
 
 export const POSITION_LABELS: Record<Position, string> = {

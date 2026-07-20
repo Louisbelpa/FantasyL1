@@ -33,7 +33,13 @@ export type ClubCode =
   | "SB29"
   | "TFC"
   | "RCSA"
-  | "FCN";
+  | "FCN"
+  | "AJA"
+  | "SCO"
+  | "HAC"
+  | "FCM"
+  | "FCL"
+  | "PFC";
 
 export interface Club {
   code: ClubCode;
@@ -51,6 +57,28 @@ export interface Gameweek {
   /** Date limite de composition (ISO 8601). */
   deadline: string;
 }
+
+/**
+ * Statistiques brutes d'un joueur sur une journée, telles que fournies
+ * par l'API de données sportives. Le moteur de points (lib/scoring.ts)
+ * les convertit en points fantasy.
+ */
+export interface PlayerMatchStats {
+  playerId: number;
+  minutes: number;
+  goals: number;
+  assists: number;
+  cleanSheet: boolean;
+  goalsConceded: number;
+  saves: number;
+  penaltiesSaved: number;
+  penaltiesMissed: number;
+  yellowCards: number;
+  redCards: number;
+  ownGoals: number;
+}
+
+export type DataSource = "mock" | "api";
 
 /** Jetons bonus activables, à la FPL. */
 export type ChipName = "tripleCaptain" | "benchBoost" | "wildcard" | "freeHit";

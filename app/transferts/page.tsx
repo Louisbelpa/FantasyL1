@@ -22,7 +22,7 @@ export default async function TransfertsPage() {
       />
       <TransfersView
         initialSquad={team.squad}
-        market={[...players, ...marketPlayers]}
+        market={team.catalogue ?? [...players, ...marketPlayers]}
         initialBank={team.bank}
         freeTransfers={team.freeTransfers}
         unlimitedChipLabel={
