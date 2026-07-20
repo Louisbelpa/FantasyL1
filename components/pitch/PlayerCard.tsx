@@ -1,6 +1,7 @@
 import type { Player } from "@/types";
 import { CLUBS } from "@/lib/constants";
 import { formatPrice } from "@/lib/team";
+import Jersey from "@/components/ui/Jersey";
 
 /**
  * Carte joueur générique affichée sur le terrain et sur le banc :
@@ -44,22 +45,5 @@ function Badge({ label }: { label: string }) {
     <span className="absolute -right-1 -top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-background">
       {label}
     </span>
-  );
-}
-
-function Jersey({ primary, secondary }: { primary: string; secondary: string }) {
-  return (
-    <svg viewBox="0 0 24 22" className="h-9 w-9 drop-shadow sm:h-11 sm:w-11" aria-hidden>
-      {/* Manches */}
-      <path d="M7 2 1.5 5 4 9.5 7 8Z" fill={secondary} stroke="#0b0f19" strokeWidth="0.6" />
-      <path d="M17 2 22.5 5 20 9.5 17 8Z" fill={secondary} stroke="#0b0f19" strokeWidth="0.6" />
-      {/* Corps */}
-      <path
-        d="M7 2h3a2 2 0 0 0 4 0h3v18H7Z"
-        fill={primary}
-        stroke="#0b0f19"
-        strokeWidth="0.6"
-      />
-    </svg>
   );
 }

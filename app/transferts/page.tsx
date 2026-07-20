@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import PageHeader from "@/components/ui/PageHeader";
+import TransfersView from "@/components/transfers/TransfersView";
+import { managerStats, marketPlayers, players } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Transferts" };
 
@@ -8,14 +10,14 @@ export default function TransfertsPage() {
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6">
       <PageHeader
         title="Transferts"
-        subtitle="Achetez et vendez des joueurs pour améliorer votre équipe."
+        subtitle="Vendez un joueur puis achetez son remplaçant au même poste. Max 3 joueurs par club."
       />
-      <div className="rounded-xl border border-edge bg-surface p-8 text-center">
-        <p className="text-muted">
-          Le marché des transferts arrive bientôt. Vous pourrez y filtrer les
-          joueurs de Ligue 1 par poste, prix et forme.
-        </p>
-      </div>
+      <TransfersView
+        initialSquad={players}
+        market={marketPlayers}
+        initialBank={managerStats.bank}
+        freeTransfers={managerStats.freeTransfers}
+      />
     </main>
   );
 }

@@ -12,6 +12,7 @@ export const CLUBS: Record<ClubCode, Club> = {
   SB29: { code: "SB29", name: "Stade Brestois", primary: "#e30613", secondary: "#f4f6f9" },
   TFC: { code: "TFC", name: "Toulouse FC", primary: "#5f3a8e", secondary: "#f4f6f9" },
   RCSA: { code: "RCSA", name: "RC Strasbourg", primary: "#2196f3", secondary: "#f4f6f9" },
+  FCN: { code: "FCN", name: "FC Nantes", primary: "#fdd835", secondary: "#1b5e20" },
 };
 
 export const POSITION_LABELS: Record<Position, string> = {
@@ -33,3 +34,17 @@ export const PITCH_LINES: Position[] = ["GK", "DEF", "MID", "FWD"];
 
 /** Budget total alloué à la création de l'équipe, en millions d'euros. */
 export const TOTAL_BUDGET = 100;
+
+/** Composition imposée de l'effectif complet (titulaires + banc). */
+export const SQUAD_COMPOSITION: Record<Position, number> = {
+  GK: 2,
+  DEF: 5,
+  MID: 5,
+  FWD: 3,
+};
+
+/** Nombre maximal de joueurs d'un même club dans l'effectif. */
+export const MAX_PER_CLUB = 3;
+
+/** Coût en points d'un transfert au-delà des transferts gratuits. */
+export const TRANSFER_POINT_COST = 4;

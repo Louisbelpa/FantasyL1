@@ -32,7 +32,8 @@ export type ClubCode =
   | "OGCN"
   | "SB29"
   | "TFC"
-  | "RCSA";
+  | "RCSA"
+  | "FCN";
 
 export interface Club {
   code: ClubCode;
