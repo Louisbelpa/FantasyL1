@@ -2,11 +2,25 @@ import type { Player } from "@/types";
 import { groupByLine } from "@/lib/team";
 import PlayerCard from "@/components/pitch/PlayerCard";
 
+export interface PitchInteraction {
+  onPlayerClick?: (player: Player) => void;
+  selectedId?: number | null;
+  eligibleIds?: ReadonlySet<number>;
+  /** En mode échange, grise les joueurs non éligibles. */
+  swapMode?: boolean;
+}
+
 /**
  * Terrain stylisé affichant les titulaires par ligne
  * (gardien en haut, attaquants en bas).
  */
-export default function Pitch({ starters }: { starters: Player[] }) {
+export default function Pitch({
+  starters,
+  onPlayerClick,
+  selectedId,
+  eligibleIds,
+  swapMode = false,
+}: { starters: Player[] } & PitchInteraction) {
   const lines = groupByLine(starters);
 
   return (
@@ -31,7 +45,16 @@ export default function Pitch({ starters }: { starters: Player[] }) {
         {lines.map((line, i) => (
           <div key={i} className="flex items-start justify-evenly">
             {line.map((player) => (
-              <PlayerCard key={player.id} player={player} />
+              <PlayerCard
+                key={player.id}
+                player={player}
+                onClick={onPlayerClick ? () => onPlayerClick(player) : undefined}
+                selected={player.id === selectedId}
+                eligible={eligibleIds?.has(player.id) ?? false}
+                dimmed={
+                  swapMode && player.id !== selectedId && !eligibleIds?.has(player.id)
+                }
+              />
             ))}
           </div>
         ))}

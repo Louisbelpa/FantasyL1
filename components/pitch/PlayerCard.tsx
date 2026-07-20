@@ -6,12 +6,25 @@ import Jersey from "@/components/ui/Jersey";
 /**
  * Carte joueur générique affichée sur le terrain et sur le banc :
  * maillot aux couleurs du club, nom, prix et prochain adversaire.
+ * Devient cliquable quand `onClick` est fourni (sélection, échange).
  */
-export default function PlayerCard({ player }: { player: Player }) {
+export default function PlayerCard({
+  player,
+  onClick,
+  selected = false,
+  eligible = false,
+  dimmed = false,
+}: {
+  player: Player;
+  onClick?: () => void;
+  selected?: boolean;
+  eligible?: boolean;
+  dimmed?: boolean;
+}) {
   const club = CLUBS[player.club];
 
-  return (
-    <div className="relative flex w-16 flex-col items-center sm:w-20">
+  const content = (
+    <>
       {player.isCaptain ? <Badge label="C" /> : null}
       {player.isViceCaptain ? <Badge label="V" /> : null}
       {player.status !== "fit" ? (
@@ -36,7 +49,29 @@ export default function PlayerCard({ player }: { player: Player }) {
           {player.nextOpponent}
         </p>
       </div>
-    </div>
+    </>
+  );
+
+  const stateClasses = `${selected ? "rounded-lg ring-2 ring-accent" : ""} ${
+    eligible ? "rounded-lg ring-2 ring-warning" : ""
+  } ${dimmed ? "opacity-40" : ""}`;
+
+  if (!onClick) {
+    return (
+      <div className={`relative flex w-16 flex-col items-center sm:w-20 ${stateClasses}`}>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex w-16 cursor-pointer flex-col items-center transition-transform hover:scale-105 sm:w-20 ${stateClasses}`}
+    >
+      {content}
+    </button>
   );
 }
 

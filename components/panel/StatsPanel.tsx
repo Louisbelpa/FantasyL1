@@ -58,7 +58,11 @@ export default function StatsPanel({
         </div>
         <DeadlineCountdown deadline={gameweek.deadline} />
         <p className="mt-3 text-xs text-muted">
-          {stats.freeTransfers} transfert gratuit restant avant la deadline.
+          {stats.freeTransfers > 1
+            ? `${stats.freeTransfers} transferts gratuits restants avant la deadline.`
+            : stats.freeTransfers === 1
+              ? "1 transfert gratuit restant avant la deadline."
+              : "Aucun transfert gratuit restant avant la deadline."}
         </p>
         <Link
           href="/transferts"

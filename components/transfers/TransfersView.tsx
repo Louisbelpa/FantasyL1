@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import type { Player, Position } from "@/types";
+import { saveTransfersAction } from "@/app/actions";
 import { CLUBS, POSITION_LABELS, POSITION_SHORT } from "@/lib/constants";
 import { formatPrice } from "@/lib/team";
 import {
@@ -37,6 +38,8 @@ export default function TransfersView({
   const [squad, setSquad] = useState(initialSquad);
   const [outgoingId, setOutgoingId] = useState<number | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [saving, startSaving] = useTransition();
 
   // Filtres du marché
   const [search, setSearch] = useState("");
@@ -94,9 +97,24 @@ export default function TransfersView({
   }
 
   function confirm() {
-    setSavedSquad(squad);
-    setOutgoingId(null);
-    setConfirmed(true);
+    setServerError(null);
+    startSaving(async () => {
+      const result = await saveTransfersAction(
+        squad.map((p) => ({
+          id: p.id,
+          isStarter: p.isStarter,
+          isCaptain: p.isCaptain ?? false,
+          isViceCaptain: p.isViceCaptain ?? false,
+        })),
+      );
+      if (result.ok) {
+        setSavedSquad(squad);
+        setOutgoingId(null);
+        setConfirmed(true);
+      } else {
+        setServerError(result.error);
+      }
+    });
   }
 
   return (
@@ -121,17 +139,20 @@ export default function TransfersView({
             </button>
             <button
               onClick={confirm}
-              disabled={transfers === 0}
+              disabled={transfers === 0 || saving}
               className="rounded-lg bg-accent px-4 py-1.5 text-xs font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
             >
-              Confirmer
+              {saving ? "Enregistrement…" : "Confirmer"}
             </button>
           </div>
         </div>
         {confirmed ? (
           <p className="mt-2 text-xs font-semibold text-accent">
-            Transferts confirmés ✓ (mock — non persisté)
+            Transferts confirmés et sauvegardés ✓
           </p>
+        ) : null}
+        {serverError ? (
+          <p className="mt-2 text-xs font-semibold text-danger">{serverError}</p>
         ) : null}
         {outgoing ? (
           <p className="mt-2 text-xs text-muted">
