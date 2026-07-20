@@ -29,11 +29,12 @@ export interface RankingRow {
 export interface UserPoints {
   gameweekPoints: number;
   totalPoints: number;
+  teamName?: string;
 }
 
 function userAsRival(user?: UserPoints): Omit<RivalManager, "id" | "previousRank"> {
   return {
-    teamName: managerStats.teamName,
+    teamName: user?.teamName ?? managerStats.teamName,
     managerName: managerStats.managerName,
     gameweekPoints: user?.gameweekPoints ?? managerStats.gameweekPoints,
     totalPoints: user?.totalPoints ?? managerStats.totalPoints,

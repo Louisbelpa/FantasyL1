@@ -44,7 +44,7 @@ export default async function ClassementsPage() {
     }));
 
   const userRow = {
-    teamName: managerStats.teamName,
+    teamName: team.teamName,
     managerName: managerStats.managerName,
     gameweekPoints: computeTeamGameweekPoints(team.squad, team.chips),
     totalPoints: team.seasonPoints,

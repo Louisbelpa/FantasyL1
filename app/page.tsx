@@ -4,8 +4,9 @@ import SquadBoard from "@/components/pitch/SquadBoard";
 import ChipsPanel from "@/components/panel/ChipsPanel";
 import DataSyncPanel from "@/components/panel/DataSyncPanel";
 import StatsPanel from "@/components/panel/StatsPanel";
+import SquadBuilder from "@/components/onboarding/SquadBuilder";
 import { activeChip, CHIP_INFO } from "@/lib/chips";
-import { managerStats } from "@/lib/data";
+import { managerStats, marketPlayers, players } from "@/lib/data";
 import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { computeTeamGameweekPoints } from "@/lib/scoring";
 import { getTeam } from "@/lib/store";
@@ -17,6 +18,19 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const team = await getTeam();
+
+  if (!team.onboarded) {
+    return (
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 md:px-6">
+        <PageHeader
+          title="Créez votre équipe"
+          subtitle={`Choisissez 15 joueurs (2 gardiens, 5 défenseurs, 5 milieux, 3 attaquants) avec un budget de 100 M€ — max 3 joueurs par club.`}
+        />
+        <SquadBuilder pool={team.catalogue ?? [...players, ...marketPlayers]} />
+      </main>
+    );
+  }
+
   const teamValue =
     Math.round(team.squad.reduce((acc, p) => acc + p.price, 0) * 10) / 10;
   const chip = activeChip(team.chips);
@@ -41,6 +55,7 @@ export default async function Home() {
           <StatsPanel
             stats={{
               ...managerStats,
+              teamName: team.teamName,
               gameweekPoints,
               totalPoints: team.seasonPoints,
               bank: team.bank,

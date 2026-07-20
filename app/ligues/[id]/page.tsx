@@ -25,6 +25,7 @@ export default async function LeaguePage({
   const rows = leagueTable(league, isMember, {
     gameweekPoints: computeTeamGameweekPoints(team.squad, team.chips),
     totalPoints: team.seasonPoints,
+    teamName: team.teamName,
   });
 
   return (

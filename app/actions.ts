@@ -15,6 +15,8 @@ import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { findLeagueByCode, findLeagueById } from "@/lib/leagues";
 import { settleGameweek } from "@/lib/settlement";
 import { simulateGameweekStats } from "@/lib/simulate";
+import { TOTAL_BUDGET } from "@/lib/constants";
+import { defaultChips } from "@/lib/chips";
 import {
   applyCaptain,
   applySubstitution,
@@ -189,6 +191,76 @@ export async function syncFromApiAction(): Promise<ActionResult> {
       }`,
     };
   }
+}
+
+/**
+ * Onboarding : crée l'équipe du manager à partir de 15 joueurs choisis
+ * dans le pool serveur. Les rôles sont assignés automatiquement en
+ * 4-4-2 (les plus chers de chaque ligne titulaires, capitaine = joueur
+ * le plus cher) — ajustables ensuite sur le terrain. Remet la saison à
+ * zéro : banque, jetons, points, historique.
+ */
+export async function createTeamAction(
+  name: string,
+  ids: number[],
+): Promise<ActionResult> {
+  const teamName = name.trim();
+  if (teamName.length < 3 || teamName.length > 30)
+    return { ok: false, error: "Le nom d'équipe doit faire entre 3 et 30 caractères." };
+
+  const team = await getTeam();
+  const pool = new Map<number, Player>(
+    (team.catalogue ?? [...players, ...marketPlayers]).map((p) => [p.id, p]),
+  );
+
+  const picked: Player[] = [];
+  for (const id of new Set(ids)) {
+    const player = pool.get(id);
+    if (!player) return { ok: false, error: `Joueur inconnu (id ${id}).` };
+    picked.push({ ...player, isStarter: false, isCaptain: false, isViceCaptain: false });
+  }
+
+  // Rôles automatiques : 4-4-2 avec les plus chers de chaque ligne.
+  const byLine = (pos: Player["position"]) =>
+    picked.filter((p) => p.position === pos).sort((a, b) => b.price - a.price);
+  const starters = [
+    ...byLine("GK").slice(0, 1),
+    ...byLine("DEF").slice(0, 4),
+    ...byLine("MID").slice(0, 4),
+    ...byLine("FWD").slice(0, 2),
+  ];
+  const starterIds = new Set(starters.map((p) => p.id));
+  const captains = [...starters].sort((a, b) => b.price - a.price);
+  const squad = picked.map((p) => ({
+    ...p,
+    isStarter: starterIds.has(p.id),
+    isCaptain: p.id === captains[0]?.id,
+    isViceCaptain: p.id === captains[1]?.id,
+  }));
+
+  const invalid = squadInvalidReason(squad);
+  if (invalid) return { ok: false, error: invalid };
+  const cost = Math.round(squad.reduce((acc, p) => acc + p.price, 0) * 10) / 10;
+  if (cost > TOTAL_BUDGET)
+    return { ok: false, error: `Budget dépassé : ${cost} M€ pour ${TOTAL_BUDGET} M€.` };
+
+  await saveTeam({
+    ...team,
+    onboarded: true,
+    teamName,
+    squad,
+    bank: Math.round((TOTAL_BUDGET - cost) * 10) / 10,
+    freeTransfers: 1,
+    chips: defaultChips(),
+    freeHitSnapshot: null,
+    seasonPoints: 0,
+    gameweekHistory: [],
+  });
+  revalidatePath("/");
+  revalidatePath("/transferts");
+  revalidatePath("/classements");
+  revalidatePath("/ligues");
+  return { ok: true };
 }
 
 /**

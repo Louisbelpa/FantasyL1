@@ -19,6 +19,9 @@ import { managerStats, players } from "@/lib/data";
  * données ne change pas les signatures.
  */
 export interface TeamState {
+  /** Faux tant que le manager n'a pas créé son équipe (onboarding). */
+  onboarded: boolean;
+  teamName: string;
   squad: Player[];
   /** Banque restante en millions d'euros. */
   bank: number;
@@ -53,6 +56,8 @@ const STORE_FILE = path.join(process.cwd(), ".store", "team.json");
 
 function seed(): TeamState {
   return {
+    onboarded: false,
+    teamName: managerStats.teamName,
     squad: players,
     bank: managerStats.bank,
     freeTransfers: managerStats.freeTransfers,
@@ -80,8 +85,10 @@ function seed(): TeamState {
 export async function getTeam(): Promise<TeamState> {
   try {
     const raw = await fs.readFile(STORE_FILE, "utf8");
-    // Les champs ajoutés après coup sont rétro-remplis depuis le seed.
-    return { ...seed(), ...(JSON.parse(raw) as Partial<TeamState>) };
+    const parsed = JSON.parse(raw) as Partial<TeamState>;
+    // Les champs ajoutés après coup sont rétro-remplis depuis le seed ;
+    // un store existant (équipe déjà en place) est réputé onboardé.
+    return { ...seed(), onboarded: Boolean(parsed.squad), ...parsed };
   } catch {
     // Premier accès (ou fichier corrompu) : repartir du seed mock.
     const state = seed();

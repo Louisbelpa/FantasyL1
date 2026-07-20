@@ -16,6 +16,7 @@ export default async function LiguesPage() {
   const userPoints = {
     gameweekPoints: computeTeamGameweekPoints(team.squad, team.chips),
     totalPoints: team.seasonPoints,
+    teamName: team.teamName,
   };
 
   const leagues: LeagueSummary[] = allLeagues(team)
