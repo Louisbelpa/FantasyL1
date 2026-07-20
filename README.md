@@ -65,6 +65,11 @@ data/         Données mock (15 joueurs fictifs) en attendant l'API de stats
   FPL), points d'équipe crédités (capitaine ×2/×3, banc sous Bench Boost),
   jeton actif consommé, +1 transfert gratuit (plafond 5), passage à la
   journée suivante — stats réelles en mode API, simulées en mode mock
+- Onboarding : création d'équipe (nom + 15 joueurs dans le budget, règles
+  appliquées en direct)
+- Verrouillage à la deadline (serveur + UI) jusqu'à la clôture
+- Fiche joueur (points par journée) et page /historique (ma saison)
+- Page /regles (barème généré depuis le moteur), écrans erreur/404/chargement
 - Persistance serveur via Server Actions et un store fichier
   (`.store/team.json`, gitignoré) — API async prête pour une vraie base de
   données
