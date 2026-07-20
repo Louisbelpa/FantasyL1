@@ -30,6 +30,12 @@ export default function StatsPanel({
           <div className="text-right">
             <p className="text-xl font-bold">{stats.totalPoints}</p>
             <p className="text-xs text-muted">Points au total</p>
+            <Link
+              href="/historique"
+              className="mt-1 inline-block text-xs font-semibold text-accent hover:underline"
+            >
+              Historique →
+            </Link>
           </div>
         </div>
       </section>

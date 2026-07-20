@@ -13,6 +13,7 @@ import {
   transfersPointCost,
 } from "@/lib/transfers";
 import Jersey from "@/components/ui/Jersey";
+import PlayerDetailModal from "@/components/ui/PlayerDetailModal";
 
 const POSITIONS: Position[] = ["GK", "DEF", "MID", "FWD"];
 
@@ -45,6 +46,7 @@ export default function TransfersView({
   const [outgoingId, setOutgoingId] = useState<number | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Player | null>(null);
   const [saving, startSaving] = useTransition();
 
   // Filtres du marché
@@ -208,6 +210,7 @@ export default function TransfersView({
                       <PlayerRow
                         key={p.id}
                         player={p}
+                        onDetail={() => setDetail(p)}
                         action={
                           <button
                             onClick={() => sell(p)}
@@ -313,6 +316,7 @@ export default function TransfersView({
                       key={p.id}
                       player={p}
                       showPosition
+                      onDetail={() => setDetail(p)}
                       action={
                         <div className="flex flex-col items-end gap-0.5">
                           <button
@@ -338,6 +342,9 @@ export default function TransfersView({
           </div>
         </section>
       </div>
+      {detail ? (
+        <PlayerDetailModal player={detail} onClose={() => setDetail(null)} />
+      ) : null}
     </div>
   );
 }
@@ -396,11 +403,13 @@ function PlayerRow({
   action,
   highlighted = false,
   showPosition = false,
+  onDetail,
 }: {
   player: Player;
   action: React.ReactNode;
   highlighted?: boolean;
   showPosition?: boolean;
+  onDetail?: () => void;
 }) {
   const club = CLUBS[player.club];
   return (
@@ -412,7 +421,17 @@ function PlayerRow({
       <Jersey primary={club.primary} secondary={club.secondary} className="h-7 w-7 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">
-          {player.name}
+          {onDetail ? (
+            <button
+              type="button"
+              onClick={onDetail}
+              className="cursor-pointer hover:text-accent hover:underline"
+            >
+              {player.name}
+            </button>
+          ) : (
+            player.name
+          )}
           {player.status === "injured" ? (
             <span title="Blessé" className="ml-1.5 inline-block h-2 w-2 rounded-full bg-danger" />
           ) : player.status === "doubtful" ? (

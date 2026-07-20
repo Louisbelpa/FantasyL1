@@ -13,6 +13,7 @@ import {
 import { getBench, getFormationLabel, getStarters } from "@/lib/team";
 import Pitch from "@/components/pitch/Pitch";
 import Bench from "@/components/pitch/Bench";
+import PlayerDetailModal from "@/components/ui/PlayerDetailModal";
 
 /**
  * Terrain interactif : sélection d'un joueur, brassards de capitaine
@@ -35,6 +36,7 @@ export default function SquadBoard({
   const [squad, setSquad] = useState(serverSquad);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [swapMode, setSwapMode] = useState(false);
+  const [detailId, setDetailId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -151,6 +153,7 @@ export default function SquadBoard({
                   primary
                   onClick={() => setSwapMode(true)}
                 />
+                <ActionButton label="Détails" onClick={() => setDetailId(selected.id)} />
                 <ActionButton label="Fermer" onClick={deselect} />
               </>
             )}
@@ -183,6 +186,12 @@ export default function SquadBoard({
         swapMode={swapMode}
         boosted={benchBoost}
       />
+      {detailId !== null ? (
+        <PlayerDetailModal
+          player={squad.find((p) => p.id === detailId)!}
+          onClose={() => setDetailId(null)}
+        />
+      ) : null}
     </div>
   );
 }

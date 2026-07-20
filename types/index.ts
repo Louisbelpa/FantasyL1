@@ -19,6 +19,8 @@ export interface Player {
   isStarter: boolean;
   isCaptain?: boolean;
   isViceCaptain?: boolean;
+  /** Points marqués par journée clôturée (rempli au fil de la saison). */
+  pointsHistory?: Array<{ gameweek: number; points: number }>;
 }
 
 export type ClubCode =

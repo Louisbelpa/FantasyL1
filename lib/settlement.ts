@@ -9,6 +9,7 @@ const MAX_FREE_TRANSFERS = 5;
 function scoreList(
   players: Player[],
   statsById: Map<number, PlayerMatchStats>,
+  gameweekId: number,
 ): Player[] {
   return players.map((p) => {
     const stats = statsById.get(p.id);
@@ -17,6 +18,10 @@ function scoreList(
       ...p,
       gameweekPoints: points,
       totalPoints: p.totalPoints + points,
+      pointsHistory: [
+        ...(p.pointsHistory ?? []),
+        { gameweek: gameweekId, points },
+      ],
     };
   });
 }
@@ -34,7 +39,7 @@ export function settleGameweek(
   settled: { id: number; name: string },
   nextGameweek: Gameweek,
 ): { team: TeamState; points: number } {
-  const scoredSquad = scoreList(team.squad, statsById);
+  const scoredSquad = scoreList(team.squad, statsById, settled.id);
   const points = computeTeamGameweekPoints(scoredSquad, team.chips);
 
   const chip = activeChip(team.chips);
@@ -44,7 +49,7 @@ export function settleGameweek(
   // points de journée recalculés pour l'affichage.
   const squad =
     chip === "freeHit" && team.freeHitSnapshot
-      ? scoreList(team.freeHitSnapshot.squad, statsById)
+      ? scoreList(team.freeHitSnapshot.squad, statsById, settled.id)
       : scoredSquad;
   const bank =
     chip === "freeHit" && team.freeHitSnapshot
@@ -59,7 +64,9 @@ export function settleGameweek(
       bank,
       chips,
       freeHitSnapshot: chip === "freeHit" ? null : team.freeHitSnapshot,
-      catalogue: team.catalogue ? scoreList(team.catalogue, statsById) : null,
+      catalogue: team.catalogue
+        ? scoreList(team.catalogue, statsById, settled.id)
+        : null,
       freeTransfers: Math.min(MAX_FREE_TRANSFERS, team.freeTransfers + 1),
       seasonPoints: team.seasonPoints + points,
       gameweekHistory: [
