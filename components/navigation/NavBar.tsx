@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserButton } from "@clerk/nextjs";
 
 const NAV_LINKS = [
   { href: "/", label: "Mon Équipe", icon: ShirtIcon },
@@ -10,7 +11,7 @@ const NAV_LINKS = [
   { href: "/classements", label: "Classements", icon: RankingIcon },
 ] as const;
 
-export default function NavBar() {
+export default function NavBar({ authEnabled = false }: { authEnabled?: boolean }) {
   const pathname = usePathname();
 
   const isActive = (href: string) =>
@@ -39,6 +40,11 @@ export default function NavBar() {
               </Link>
             ))}
           </nav>
+          {authEnabled ? (
+            <div className="ml-auto">
+              <UserButton />
+            </div>
+          ) : null}
         </div>
       </header>
 

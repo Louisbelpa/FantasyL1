@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PageHeader from "@/components/ui/PageHeader";
 import { CHIP_INFO } from "@/lib/chips";
+import { requireUserId } from "@/lib/auth";
 import { getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Historique" };
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Historique" };
 export const dynamic = "force-dynamic";
 
 export default async function HistoriquePage() {
-  const team = await getTeam();
+  const team = await getTeam(await requireUserId());
   const history = [...team.gameweekHistory].reverse();
   const best = team.gameweekHistory.reduce(
     (max, entry) => Math.max(max, entry.points),

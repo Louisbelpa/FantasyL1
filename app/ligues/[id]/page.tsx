@@ -5,6 +5,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import RankingTable from "@/components/rankings/RankingTable";
 import { findLeagueById, leagueTable } from "@/lib/leagues";
 import { computeTeamGameweekPoints } from "@/lib/scoring";
+import { requireUserId } from "@/lib/auth";
 import { getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Classement de ligue" };
@@ -17,7 +18,7 @@ export default async function LeaguePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const team = await getTeam();
+  const team = await getTeam(await requireUserId());
   const league = findLeagueById(team, id);
   if (!league) notFound();
 

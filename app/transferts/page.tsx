@@ -4,6 +4,7 @@ import TransfersView from "@/components/transfers/TransfersView";
 import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
 import { marketPlayers, players } from "@/lib/data";
 import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
+import { requireUserId } from "@/lib/auth";
 import { getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Transferts" };
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: "Transferts" };
 export const dynamic = "force-dynamic";
 
 export default async function TransfertsPage() {
-  const team = await getTeam();
+  const team = await getTeam(await requireUserId());
   const chip = activeChip(team.chips);
 
   return (

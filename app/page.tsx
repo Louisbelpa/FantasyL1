@@ -9,6 +9,7 @@ import { activeChip, CHIP_INFO } from "@/lib/chips";
 import { managerStats, marketPlayers, players } from "@/lib/data";
 import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { computeTeamGameweekPoints } from "@/lib/scoring";
+import { requireUserId } from "@/lib/auth";
 import { getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Mon Équipe" };
@@ -17,7 +18,7 @@ export const metadata: Metadata = { title: "Mon Équipe" };
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const team = await getTeam();
+  const team = await getTeam(await requireUserId());
 
   if (!team.onboarded) {
     return (

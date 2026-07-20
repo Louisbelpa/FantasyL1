@@ -9,6 +9,7 @@ import {
   fetchRoundFixtures,
   isApiConfigured,
 } from "@/lib/api/apiFootball";
+import { requireUserId } from "@/lib/auth";
 import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
 import { gameweek as mockGameweek, marketPlayers, players } from "@/lib/data";
 import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
@@ -43,14 +44,15 @@ function deadlineBlock(team: Awaited<ReturnType<typeof getTeam>>): ActionResult 
 async function mutateSquad(
   mutate: (squad: Player[]) => Player[] | string,
 ): Promise<ActionResult> {
-  const team = await getTeam();
+  const userId = await requireUserId();
+  const team = await getTeam(userId);
   const blocked = deadlineBlock(team);
   if (blocked) return blocked;
   const result = mutate(team.squad);
   if (typeof result === "string") return { ok: false, error: result };
   const invalid = squadInvalidReason(result);
   if (invalid) return { ok: false, error: invalid };
-  await saveTeam({ ...team, squad: result });
+  await saveTeam(userId, { ...team, squad: result });
   revalidatePath("/");
   revalidatePath("/transferts");
   return { ok: true };
@@ -79,7 +81,8 @@ export async function viceCaptainAction(id: number): Promise<ActionResult> {
 export async function activateChipAction(chip: ChipName): Promise<ActionResult> {
   if (!CHIP_INFO[chip]) return { ok: false, error: "Jeton inconnu." };
 
-  const team = await getTeam();
+  const userId = await requireUserId();
+  const team = await getTeam(userId);
   const blocked = deadlineBlock(team);
   if (blocked) return blocked;
   if (team.chips[chip] === "used")
@@ -93,7 +96,7 @@ export async function activateChipAction(chip: ChipName): Promise<ActionResult> 
       error: `Un seul jeton par journée : « ${CHIP_INFO[current].label} » est déjà actif.`,
     };
 
-  await saveTeam({
+  await saveTeam(userId, {
     ...team,
     chips: { ...team.chips, [chip]: "active" },
     freeHitSnapshot:
@@ -113,14 +116,15 @@ export async function activateChipAction(chip: ChipName): Promise<ActionResult> 
 export async function deactivateChipAction(chip: ChipName): Promise<ActionResult> {
   if (!CHIP_INFO[chip]) return { ok: false, error: "Jeton inconnu." };
 
-  const team = await getTeam();
+  const userId = await requireUserId();
+  const team = await getTeam(userId);
   const blocked = deadlineBlock(team);
   if (blocked) return blocked;
   if (team.chips[chip] !== "active")
     return { ok: false, error: `« ${CHIP_INFO[chip].label} » n'est pas actif.` };
 
   const restore = chip === "freeHit" ? team.freeHitSnapshot : null;
-  await saveTeam({
+  await saveTeam(userId, {
     ...team,
     squad: restore ? restore.squad : team.squad,
     bank: restore ? restore.bank : team.bank,
@@ -157,7 +161,8 @@ export async function syncFromApiAction(): Promise<ActionResult> {
           "Synchronisation vide : vérifiez la saison (API_FOOTBALL_SEASON) et le mapping des clubs.",
       };
 
-    const team = await getTeam();
+    const userId = await requireUserId();
+    const team = await getTeam(userId);
     const byId = new Map(catalogue.map((p) => [p.id, p]));
     const squad = team.squad.map((p) => {
       const fresh = byId.get(p.id);
@@ -172,7 +177,7 @@ export async function syncFromApiAction(): Promise<ActionResult> {
         : p;
     });
 
-    await saveTeam({
+    await saveTeam(userId, {
       ...team,
       squad,
       catalogue,
@@ -208,7 +213,8 @@ export async function createTeamAction(
   if (teamName.length < 3 || teamName.length > 30)
     return { ok: false, error: "Le nom d'équipe doit faire entre 3 et 30 caractères." };
 
-  const team = await getTeam();
+  const userId = await requireUserId();
+  const team = await getTeam(userId);
   const pool = new Map<number, Player>(
     (team.catalogue ?? [...players, ...marketPlayers]).map((p) => [p.id, p]),
   );
@@ -244,7 +250,7 @@ export async function createTeamAction(
   if (cost > TOTAL_BUDGET)
     return { ok: false, error: `Budget dépassé : ${cost} M€ pour ${TOTAL_BUDGET} M€.` };
 
-  await saveTeam({
+  await saveTeam(userId, {
     ...team,
     onboarded: true,
     teamName,
@@ -271,7 +277,8 @@ export async function createTeamAction(
  * (journée terminée exigée) ; en mode mock elles sont simulées.
  */
 export async function settleGameweekAction(): Promise<ActionResult> {
-  const team = await getTeam();
+  const userId = await requireUserId();
+  const team = await getTeam(userId);
   const current = team.apiGameweek ?? mockGameweek;
 
   try {
@@ -307,7 +314,7 @@ export async function settleGameweekAction(): Promise<ActionResult> {
     }
 
     const { team: settled } = settleGameweek(team, statsById, current, nextGameweek);
-    await saveTeam(settled);
+    await saveTeam(userId, settled);
     revalidatePath("/");
     revalidatePath("/transferts");
     revalidatePath("/classements");
@@ -327,13 +334,14 @@ export async function joinLeagueAction(code: string): Promise<ActionResult> {
   const trimmed = code.trim();
   if (!trimmed) return { ok: false, error: "Saisissez un code d'invitation." };
 
-  const team = await getTeam();
+  const userId = await requireUserId();
+  const team = await getTeam(userId);
   const league = findLeagueByCode(team, trimmed);
   if (!league) return { ok: false, error: "Aucune ligue ne correspond à ce code." };
   if (team.joinedLeagueIds.includes(league.id))
     return { ok: false, error: `Vous êtes déjà membre de « ${league.name} ».` };
 
-  await saveTeam({ ...team, joinedLeagueIds: [...team.joinedLeagueIds, league.id] });
+  await saveTeam(userId, { ...team, joinedLeagueIds: [...team.joinedLeagueIds, league.id] });
   revalidatePath("/ligues");
   return { ok: true };
 }
@@ -344,7 +352,8 @@ export async function createLeagueAction(name: string): Promise<ActionResult> {
   if (trimmed.length < 3 || trimmed.length > 40)
     return { ok: false, error: "Le nom doit faire entre 3 et 40 caractères." };
 
-  const team = await getTeam();
+  const userId = await requireUserId();
+  const team = await getTeam(userId);
   const exists = team.customLeagues.some(
     (l) => l.name.toLowerCase() === trimmed.toLowerCase(),
   );
@@ -367,7 +376,7 @@ export async function createLeagueAction(name: string): Promise<ActionResult> {
     type: "privée",
     memberIds: [],
   };
-  await saveTeam({
+  await saveTeam(userId, {
     ...team,
     customLeagues: [...team.customLeagues, league],
     joinedLeagueIds: [...team.joinedLeagueIds, league.id],
@@ -378,12 +387,13 @@ export async function createLeagueAction(name: string): Promise<ActionResult> {
 
 /** Quitte une ligue (une ligue créée par le manager est supprimée). */
 export async function leaveLeagueAction(id: string): Promise<ActionResult> {
-  const team = await getTeam();
+  const userId = await requireUserId();
+  const team = await getTeam(userId);
   const league = findLeagueById(team, id);
   if (!league || !team.joinedLeagueIds.includes(id))
     return { ok: false, error: "Vous n'êtes pas membre de cette ligue." };
 
-  await saveTeam({
+  await saveTeam(userId, {
     ...team,
     joinedLeagueIds: team.joinedLeagueIds.filter((l) => l !== id),
     customLeagues: team.customLeagues.filter((l) => l.id !== id),
@@ -408,7 +418,8 @@ export interface SquadEntry {
  * persister.
  */
 export async function saveTransfersAction(entries: SquadEntry[]): Promise<ActionResult> {
-  const team = await getTeam();
+  const userId = await requireUserId();
+  const team = await getTeam(userId);
   const blocked = deadlineBlock(team);
   if (blocked) return blocked;
   const pool = new Map<number, Player>(
@@ -438,7 +449,7 @@ export async function saveTransfersAction(entries: SquadEntry[]): Promise<Action
   // Joker ou Free Hit actif : les transferts sont gratuits et illimités,
   // le compteur de transferts gratuits n'est pas entamé.
   const transfers = countTransfers(team.squad, squad);
-  await saveTeam({
+  await saveTeam(userId, {
     ...team,
     squad,
     bank,

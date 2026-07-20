@@ -4,6 +4,7 @@ import RankingsView from "@/components/rankings/RankingsView";
 import type { RankingTableRow } from "@/components/rankings/RankingTable";
 import { managerStats, rivalManagers } from "@/lib/data";
 import { computeTeamGameweekPoints } from "@/lib/scoring";
+import { requireUserId } from "@/lib/auth";
 import { getTeam } from "@/lib/store";
 import { formatRank } from "@/lib/team";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = { title: "Classements" };
 export const dynamic = "force-dynamic";
 
 export default async function ClassementsPage() {
-  const team = await getTeam();
+  const team = await getTeam(await requireUserId());
   const general: RankingTableRow[] = [...rivalManagers]
     .sort(
       (a, b) =>

@@ -12,11 +12,11 @@ import { defaultChips } from "@/lib/chips";
 import { managerStats, players } from "@/lib/data";
 
 /**
- * Persistance côté serveur de l'équipe du manager. En attendant une
- * vraie base de données, l'état vit dans un fichier JSON sur disque
- * (`.store/team.json`, gitignoré), seedé depuis les mocks au premier
- * accès. Toute l'API est asynchrone pour qu'un passage à une base de
- * données ne change pas les signatures.
+ * Persistance côté serveur de l'équipe de chaque manager, seedée
+ * depuis les mocks au premier accès. Deux backends derrière la même
+ * API : Postgres via Drizzle quand DATABASE_URL est configurée (Neon
+ * en production), sinon un fichier JSON par manager dans `.store/`
+ * (gitignoré) pour le dev local.
  */
 export interface TeamState {
   /** Faux tant que le manager n'a pas créé son équipe (onboarding). */
@@ -52,7 +52,17 @@ export interface TeamState {
   updatedAt: string;
 }
 
-const STORE_FILE = path.join(process.cwd(), ".store", "team.json");
+const STORE_DIR = path.join(process.cwd(), ".store");
+
+function databaseEnabled(): boolean {
+  return Boolean(process.env.DATABASE_URL);
+}
+
+function fileFor(userId: string): string {
+  // Compatibilité avec le store historique du mode mono-utilisateur.
+  if (userId === "local-dev") return path.join(STORE_DIR, "team.json");
+  return path.join(STORE_DIR, `team-${userId.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`);
+}
 
 function seed(): TeamState {
   return {
@@ -82,27 +92,48 @@ function seed(): TeamState {
   };
 }
 
-export async function getTeam(): Promise<TeamState> {
+/**
+ * Rétro-remplissage : les champs ajoutés après coup viennent du seed ;
+ * un état existant (équipe déjà en place) est réputé onboardé.
+ */
+function hydrate(parsed: Partial<TeamState>): TeamState {
+  return { ...seed(), onboarded: Boolean(parsed.squad), ...parsed };
+}
+
+export async function getTeam(userId: string): Promise<TeamState> {
+  if (databaseEnabled()) {
+    const { dbGetTeam } = await import("@/lib/db");
+    const existing = await dbGetTeam(userId);
+    if (existing) return hydrate(existing);
+    return saveTeam(userId, seed());
+  }
+
   try {
-    const raw = await fs.readFile(STORE_FILE, "utf8");
-    const parsed = JSON.parse(raw) as Partial<TeamState>;
-    // Les champs ajoutés après coup sont rétro-remplis depuis le seed ;
-    // un store existant (équipe déjà en place) est réputé onboardé.
-    return { ...seed(), onboarded: Boolean(parsed.squad), ...parsed };
+    const raw = await fs.readFile(fileFor(userId), "utf8");
+    return hydrate(JSON.parse(raw) as Partial<TeamState>);
   } catch {
     // Premier accès (ou fichier corrompu) : repartir du seed mock.
-    const state = seed();
-    await saveTeam(state);
-    return state;
+    return saveTeam(userId, seed());
   }
 }
 
-export async function saveTeam(state: Omit<TeamState, "updatedAt">): Promise<TeamState> {
+export async function saveTeam(
+  userId: string,
+  state: Omit<TeamState, "updatedAt">,
+): Promise<TeamState> {
   const next: TeamState = { ...state, updatedAt: new Date().toISOString() };
-  await fs.mkdir(path.dirname(STORE_FILE), { recursive: true });
+
+  if (databaseEnabled()) {
+    const { dbSaveTeam } = await import("@/lib/db");
+    await dbSaveTeam(userId, next);
+    return next;
+  }
+
+  const file = fileFor(userId);
+  await fs.mkdir(path.dirname(file), { recursive: true });
   // Écriture atomique : jamais de fichier à moitié écrit.
-  const tmp = `${STORE_FILE}.tmp`;
+  const tmp = `${file}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(next, null, 2), "utf8");
-  await fs.rename(tmp, STORE_FILE);
+  await fs.rename(tmp, file);
   return next;
 }

@@ -37,6 +37,24 @@ fantasy sont calculés par `lib/scoring.ts` (barème FPL) à partir des stats
 brutes de `lib/api/apiFootball.ts` (`fetchFixturePlayerStats`) ; les prix
 restent une donnée de jeu générée par une heuristique à affiner.
 
+## Comptes & base de données (production)
+
+Sans configuration, l'app tourne en mode mono-utilisateur avec persistance
+fichier (`.store/`). Pour le multi-utilisateurs :
+
+1. **Auth Clerk** : créer une application sur
+   [dashboard.clerk.com](https://dashboard.clerk.com) et renseigner
+   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` dans `.env.local`.
+   La connexion devient obligatoire (`/connexion`), chaque utilisateur a sa
+   propre équipe.
+2. **Postgres Neon** : créer une base sur [neon.tech](https://neon.tech) et
+   renseigner `DATABASE_URL`. Le store bascule sur Postgres (Drizzle, table
+   `fantasy_teams` créée automatiquement au premier accès — un état JSONB par
+   manager ; le modèle relationnel fin viendra avec les ligues multi-joueurs).
+
+Les deux options sont indépendantes : chacune s'active par la simple présence
+de ses variables d'environnement.
+
 ## Structure
 
 ```

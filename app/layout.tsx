@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import NavBar from "@/components/navigation/NavBar";
+import { isAuthEnabled } from "@/lib/auth";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,13 +34,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
+  const authEnabled = isAuthEnabled();
+
+  const page = (
     <html
       lang="fr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans pb-16 md:pb-0">
-        <NavBar />
+        <NavBar authEnabled={authEnabled} />
         {children}
         <footer className="border-t border-edge px-4 py-4 text-center text-xs text-muted">
           <Link href="/regles" className="hover:text-accent">
@@ -50,4 +54,6 @@ export default function RootLayout({
       </body>
     </html>
   );
+
+  return authEnabled ? <ClerkProvider>{page}</ClerkProvider> : page;
 }
