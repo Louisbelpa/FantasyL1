@@ -46,6 +46,12 @@ export async function dbGetTeam(userId: string): Promise<TeamState | null> {
   return rows[0]?.state ?? null;
 }
 
+export async function dbListUserIds(): Promise<string[]> {
+  await ensureSchema();
+  const rows = await getDb().select({ userId: teams.userId }).from(teams);
+  return rows.map((r) => r.userId);
+}
+
 export async function dbSaveTeam(userId: string, state: TeamState): Promise<void> {
   await ensureSchema();
   await getDb()

@@ -137,3 +137,21 @@ export async function saveTeam(
   await fs.rename(tmp, file);
   return next;
 }
+
+/** Ids de tous les managers connus (pour le cron de clôture). */
+export async function listUserIds(): Promise<string[]> {
+  if (databaseEnabled()) {
+    const { dbListUserIds } = await import("@/lib/db");
+    return dbListUserIds();
+  }
+  try {
+    const files = await fs.readdir(STORE_DIR);
+    return files
+      .filter((f) => f.endsWith(".json"))
+      .map((f) =>
+        f === "team.json" ? "local-dev" : f.replace(/^team-/, "").replace(/\.json$/, ""),
+      );
+  } catch {
+    return [];
+  }
+}

@@ -1,21 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { ChipName, Gameweek, League, Player, PlayerMatchStats } from "@/types";
-import {
-  fetchCatalogue,
-  fetchFixturePlayerStats,
-  fetchNextGameweek,
-  fetchRoundFixtures,
-  isApiConfigured,
-} from "@/lib/api/apiFootball";
+import type { ChipName, League, Player } from "@/types";
+import { fetchCatalogue, fetchNextGameweek, isApiConfigured } from "@/lib/api/apiFootball";
 import { requireUserId } from "@/lib/auth";
 import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
-import { gameweek as mockGameweek, marketPlayers, players } from "@/lib/data";
+import { marketPlayers, players } from "@/lib/data";
 import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { findLeagueByCode, findLeagueById } from "@/lib/leagues";
-import { settleGameweek } from "@/lib/settlement";
-import { simulateGameweekStats } from "@/lib/simulate";
+import { runSettlement } from "@/lib/settle-run";
 import { TOTAL_BUDGET } from "@/lib/constants";
 import { defaultChips } from "@/lib/chips";
 import {
@@ -278,55 +271,7 @@ export async function createTeamAction(
  */
 export async function settleGameweekAction(): Promise<ActionResult> {
   const userId = await requireUserId();
-  const team = await getTeam(userId);
-  const current = team.apiGameweek ?? mockGameweek;
-
-  try {
-    let statsById: Map<number, PlayerMatchStats>;
-    let nextGameweek: Gameweek;
-
-    if (team.dataSource === "api" && isApiConfigured()) {
-      const fixtures = await fetchRoundFixtures(current.id);
-      if (fixtures.length === 0)
-        return { ok: false, error: `Aucun match trouvé pour ${current.name}.` };
-      if (!fixtures.every((f) => f.finished))
-        return {
-          ok: false,
-          error: `${current.name} n'est pas terminée : clôture impossible avant la fin des matchs.`,
-        };
-      const all: PlayerMatchStats[] = [];
-      for (const fixture of fixtures)
-        all.push(...(await fetchFixturePlayerStats(fixture.id)));
-      statsById = new Map(all.map((s) => [s.playerId, s]));
-      nextGameweek = (await fetchNextGameweek()).gameweek;
-    } else {
-      statsById = simulateGameweekStats(
-        [...team.squad, ...(team.catalogue ?? [])],
-        current.id,
-      );
-      nextGameweek = {
-        id: current.id + 1,
-        name: `Journée ${current.id + 1}`,
-        deadline: new Date(
-          new Date(current.deadline).getTime() + 7 * 86_400_000,
-        ).toISOString(),
-      };
-    }
-
-    const { team: settled } = settleGameweek(team, statsById, current, nextGameweek);
-    await saveTeam(userId, settled);
-    revalidatePath("/");
-    revalidatePath("/transferts");
-    revalidatePath("/classements");
-    return { ok: true };
-  } catch (cause) {
-    return {
-      ok: false,
-      error: `Échec de la clôture : ${
-        cause instanceof Error ? cause.message : String(cause)
-      }`,
-    };
-  }
+  return runSettlement(userId);
 }
 
 /** Rejoint une ligue via son code d'invitation. */

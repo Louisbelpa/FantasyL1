@@ -55,6 +55,11 @@ fichier (`.store/`). Pour le multi-utilisateurs :
 Les deux options sont indépendantes : chacune s'active par la simple présence
 de ses variables d'environnement.
 
+3. **Cron de clôture** : `GET /api/cron` (protégé par `CRON_SECRET`) clôture
+   la journée de chaque manager dont la deadline est passée — idempotent.
+   `vercel.json` le planifie chaque nuit à 3 h via Vercel Cron ; utilisable
+   avec n'importe quel planificateur HTTP.
+
 ## Structure
 
 ```
