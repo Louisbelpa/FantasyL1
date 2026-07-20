@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PageHeader from "@/components/ui/PageHeader";
 import LeaguesView, { type LeagueSummary } from "@/components/leagues/LeaguesView";
 import { allLeagues, userRankInLeague } from "@/lib/leagues";
+import { computeTeamGameweekPoints } from "@/lib/scoring";
 import { getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Ligues" };
@@ -12,6 +13,10 @@ export const dynamic = "force-dynamic";
 export default async function LiguesPage() {
   const team = await getTeam();
   const customIds = new Set(team.customLeagues.map((l) => l.id));
+  const userPoints = {
+    gameweekPoints: computeTeamGameweekPoints(team.squad, team.chips),
+    totalPoints: team.seasonPoints,
+  };
 
   const leagues: LeagueSummary[] = allLeagues(team)
     .filter((l) => team.joinedLeagueIds.includes(l.id))
@@ -21,7 +26,7 @@ export default async function LiguesPage() {
       code: l.code,
       type: l.type,
       members: l.memberIds.length + 1,
-      myRank: userRankInLeague(l),
+      myRank: userRankInLeague(l, userPoints),
       isCustom: customIds.has(l.id),
     }));
 

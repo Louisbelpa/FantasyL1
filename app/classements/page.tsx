@@ -3,11 +3,17 @@ import PageHeader from "@/components/ui/PageHeader";
 import RankingsView from "@/components/rankings/RankingsView";
 import type { RankingTableRow } from "@/components/rankings/RankingTable";
 import { managerStats, rivalManagers } from "@/lib/data";
+import { computeTeamGameweekPoints } from "@/lib/scoring";
+import { getTeam } from "@/lib/store";
 import { formatRank } from "@/lib/team";
 
 export const metadata: Metadata = { title: "Classements" };
 
-export default function ClassementsPage() {
+// Les points de l'utilisateur sont lus depuis le store serveur.
+export const dynamic = "force-dynamic";
+
+export default async function ClassementsPage() {
+  const team = await getTeam();
   const general: RankingTableRow[] = [...rivalManagers]
     .sort(
       (a, b) =>
@@ -40,8 +46,8 @@ export default function ClassementsPage() {
   const userRow = {
     teamName: managerStats.teamName,
     managerName: managerStats.managerName,
-    gameweekPoints: managerStats.gameweekPoints,
-    totalPoints: managerStats.totalPoints,
+    gameweekPoints: computeTeamGameweekPoints(team.squad, team.chips),
+    totalPoints: team.seasonPoints,
     isUser: true,
   };
   const pinnedGeneral: RankingTableRow = {

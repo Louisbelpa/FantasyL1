@@ -25,12 +25,18 @@ export interface RankingRow {
   isUser: boolean;
 }
 
-function userAsRival(): Omit<RivalManager, "id" | "previousRank"> {
+/** Points de l'utilisateur affichés dans les classements. */
+export interface UserPoints {
+  gameweekPoints: number;
+  totalPoints: number;
+}
+
+function userAsRival(user?: UserPoints): Omit<RivalManager, "id" | "previousRank"> {
   return {
     teamName: managerStats.teamName,
     managerName: managerStats.managerName,
-    gameweekPoints: managerStats.gameweekPoints,
-    totalPoints: managerStats.totalPoints,
+    gameweekPoints: user?.gameweekPoints ?? managerStats.gameweekPoints,
+    totalPoints: user?.totalPoints ?? managerStats.totalPoints,
   };
 }
 
@@ -38,12 +44,16 @@ function userAsRival(): Omit<RivalManager, "id" | "previousRank"> {
  * Classement d'une ligue : membres fictifs + l'utilisateur s'il en est
  * membre, triés par points totaux (départage aux points de la journée).
  */
-export function leagueTable(league: League, userIsMember: boolean): RankingRow[] {
+export function leagueTable(
+  league: League,
+  userIsMember: boolean,
+  user?: UserPoints,
+): RankingRow[] {
   const rows = rivalManagers
     .filter((r) => league.memberIds.includes(r.id))
     .map((r) => ({ ...r, isUser: false }));
   const entries: (typeof rows[number] | (ReturnType<typeof userAsRival> & { isUser: true }))[] =
-    userIsMember ? [...rows, { ...userAsRival(), isUser: true }] : rows;
+    userIsMember ? [...rows, { ...userAsRival(user), isUser: true }] : rows;
 
   return entries
     .sort(
@@ -61,7 +71,7 @@ export function leagueTable(league: League, userIsMember: boolean): RankingRow[]
 }
 
 /** Rang de l'utilisateur dans une ligue dont il est membre. */
-export function userRankInLeague(league: League): number {
-  const row = leagueTable(league, true).find((r) => r.isUser);
+export function userRankInLeague(league: League, user?: UserPoints): number {
+  const row = leagueTable(league, true, user).find((r) => r.isUser);
   return row?.rank ?? 0;
 }

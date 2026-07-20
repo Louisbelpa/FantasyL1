@@ -39,6 +39,7 @@ export default async function Home() {
             stats={{
               ...managerStats,
               gameweekPoints,
+              totalPoints: team.seasonPoints,
               bank: team.bank,
               teamValue,
               freeTransfers: team.freeTransfers,
@@ -47,7 +48,11 @@ export default async function Home() {
             activeChipLabel={chip ? CHIP_INFO[chip].label : null}
           />
           <ChipsPanel chips={team.chips} />
-          <DataSyncPanel dataSource={team.dataSource} lastSyncAt={team.lastSyncAt} />
+          <DataSyncPanel
+            dataSource={team.dataSource}
+            lastSyncAt={team.lastSyncAt}
+            lastSettled={team.gameweekHistory.at(-1) ?? null}
+          />
         </div>
       </div>
     </main>

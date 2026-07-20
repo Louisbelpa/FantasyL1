@@ -1,6 +1,13 @@
 import { promises as fs } from "fs";
 import path from "path";
-import type { Chips, DataSource, Gameweek, League, Player } from "@/types";
+import type {
+  ChipName,
+  Chips,
+  DataSource,
+  Gameweek,
+  League,
+  Player,
+} from "@/types";
 import { defaultChips } from "@/lib/chips";
 import { managerStats, players } from "@/lib/data";
 
@@ -30,6 +37,15 @@ export interface TeamState {
   apiGameweek: Gameweek | null;
   dataSource: DataSource;
   lastSyncAt: string | null;
+  /** Points crédités sur la saison (journées clôturées). */
+  seasonPoints: number;
+  /** Journées clôturées, de la plus ancienne à la plus récente. */
+  gameweekHistory: Array<{
+    id: number;
+    name: string;
+    points: number;
+    chip: ChipName | null;
+  }>;
   updatedAt: string;
 }
 
@@ -48,6 +64,15 @@ function seed(): TeamState {
     apiGameweek: null,
     dataSource: "mock",
     lastSyncAt: null,
+    seasonPoints: managerStats.totalPoints,
+    gameweekHistory: [
+      {
+        id: 1,
+        name: "Journée 1",
+        points: managerStats.totalPoints,
+        chip: null,
+      },
+    ],
     updatedAt: new Date(0).toISOString(),
   };
 }

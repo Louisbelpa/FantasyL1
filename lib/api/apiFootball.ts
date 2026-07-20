@@ -112,9 +112,27 @@ interface ApiPlayer {
 }
 
 interface ApiFixture {
-  fixture: { id: number; timestamp: number };
+  fixture: { id: number; timestamp: number; status?: { short: string } };
   league: { round: string };
   teams: { home: { name: string }; away: { name: string } };
+}
+
+/** Statuts API-Football d'un match terminé. */
+const FINISHED = new Set(["FT", "AET", "PEN"]);
+
+/** Matchs d'une journée donnée, avec leur statut terminé ou non. */
+export async function fetchRoundFixtures(
+  roundId: number,
+): Promise<Array<{ id: number; finished: boolean }>> {
+  const fixtures = await apiFetch<ApiFixture>("/fixtures", {
+    league: LEAGUE_ID,
+    season: apiSeason(),
+    round: `Regular Season - ${roundId}`,
+  });
+  return fixtures.map((f) => ({
+    id: f.fixture.id,
+    finished: FINISHED.has(f.fixture.status?.short ?? ""),
+  }));
 }
 
 /**

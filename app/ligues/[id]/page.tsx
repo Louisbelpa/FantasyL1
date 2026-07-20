@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PageHeader from "@/components/ui/PageHeader";
 import RankingTable from "@/components/rankings/RankingTable";
 import { findLeagueById, leagueTable } from "@/lib/leagues";
+import { computeTeamGameweekPoints } from "@/lib/scoring";
 import { getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Classement de ligue" };
@@ -21,7 +22,10 @@ export default async function LeaguePage({
   if (!league) notFound();
 
   const isMember = team.joinedLeagueIds.includes(league.id);
-  const rows = leagueTable(league, isMember);
+  const rows = leagueTable(league, isMember, {
+    gameweekPoints: computeTeamGameweekPoints(team.squad, team.chips),
+    totalPoints: team.seasonPoints,
+  });
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 md:px-6">

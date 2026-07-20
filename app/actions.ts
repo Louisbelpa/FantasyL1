@@ -1,15 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { ChipName, League, Player } from "@/types";
+import type { ChipName, Gameweek, League, Player, PlayerMatchStats } from "@/types";
 import {
   fetchCatalogue,
+  fetchFixturePlayerStats,
   fetchNextGameweek,
+  fetchRoundFixtures,
   isApiConfigured,
 } from "@/lib/api/apiFootball";
 import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
-import { marketPlayers, players } from "@/lib/data";
+import { gameweek as mockGameweek, marketPlayers, players } from "@/lib/data";
 import { findLeagueByCode, findLeagueById } from "@/lib/leagues";
+import { settleGameweek } from "@/lib/settlement";
+import { simulateGameweekStats } from "@/lib/simulate";
 import {
   applyCaptain,
   applySubstitution,
@@ -163,6 +167,65 @@ export async function syncFromApiAction(): Promise<ActionResult> {
     return {
       ok: false,
       error: `Échec de la synchronisation : ${
+        cause instanceof Error ? cause.message : String(cause)
+      }`,
+    };
+  }
+}
+
+/**
+ * Clôture la journée en cours : points des joueurs via le moteur de
+ * scoring, points d'équipe (capitaine, jetons), jeton actif consommé,
+ * équipe restaurée après un Free Hit, +1 transfert gratuit, passage à
+ * la journée suivante. En mode API les stats viennent des matchs réels
+ * (journée terminée exigée) ; en mode mock elles sont simulées.
+ */
+export async function settleGameweekAction(): Promise<ActionResult> {
+  const team = await getTeam();
+  const current = team.apiGameweek ?? mockGameweek;
+
+  try {
+    let statsById: Map<number, PlayerMatchStats>;
+    let nextGameweek: Gameweek;
+
+    if (team.dataSource === "api" && isApiConfigured()) {
+      const fixtures = await fetchRoundFixtures(current.id);
+      if (fixtures.length === 0)
+        return { ok: false, error: `Aucun match trouvé pour ${current.name}.` };
+      if (!fixtures.every((f) => f.finished))
+        return {
+          ok: false,
+          error: `${current.name} n'est pas terminée : clôture impossible avant la fin des matchs.`,
+        };
+      const all: PlayerMatchStats[] = [];
+      for (const fixture of fixtures)
+        all.push(...(await fetchFixturePlayerStats(fixture.id)));
+      statsById = new Map(all.map((s) => [s.playerId, s]));
+      nextGameweek = (await fetchNextGameweek()).gameweek;
+    } else {
+      statsById = simulateGameweekStats(
+        [...team.squad, ...(team.catalogue ?? [])],
+        current.id,
+      );
+      nextGameweek = {
+        id: current.id + 1,
+        name: `Journée ${current.id + 1}`,
+        deadline: new Date(
+          new Date(current.deadline).getTime() + 7 * 86_400_000,
+        ).toISOString(),
+      };
+    }
+
+    const { team: settled } = settleGameweek(team, statsById, current, nextGameweek);
+    await saveTeam(settled);
+    revalidatePath("/");
+    revalidatePath("/transferts");
+    revalidatePath("/classements");
+    return { ok: true };
+  } catch (cause) {
+    return {
+      ok: false,
+      error: `Échec de la clôture : ${
         cause instanceof Error ? cause.message : String(cause)
       }`,
     };

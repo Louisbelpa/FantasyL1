@@ -61,6 +61,10 @@ data/         Données mock (15 joueurs fictifs) en attendant l'API de stats
 - Jetons bonus à la FPL : Triple Capitaine, Bench Boost, Joker (transferts
   illimités), Free Hit (équipe restaurée) — un seul actif par journée, usage
   unique par saison
+- Clôture de journée : points des joueurs calculés par le moteur (barème
+  FPL), points d'équipe crédités (capitaine ×2/×3, banc sous Bench Boost),
+  jeton actif consommé, +1 transfert gratuit (plafond 5), passage à la
+  journée suivante — stats réelles en mode API, simulées en mode mock
 - Persistance serveur via Server Actions et un store fichier
   (`.store/team.json`, gitignoré) — API async prête pour une vraie base de
   données
