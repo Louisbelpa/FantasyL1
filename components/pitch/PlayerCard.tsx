@@ -14,18 +14,21 @@ export default function PlayerCard({
   selected = false,
   eligible = false,
   dimmed = false,
+  tripleCaptain = false,
 }: {
   player: Player;
   onClick?: () => void;
   selected?: boolean;
   eligible?: boolean;
   dimmed?: boolean;
+  /** Triple Capitaine actif : le badge du capitaine affiche ×3. */
+  tripleCaptain?: boolean;
 }) {
   const club = CLUBS[player.club];
 
   const content = (
     <>
-      {player.isCaptain ? <Badge label="C" /> : null}
+      {player.isCaptain ? <Badge label={tripleCaptain ? "C×3" : "C"} /> : null}
       {player.isViceCaptain ? <Badge label="V" /> : null}
       {player.status !== "fit" ? (
         <span
@@ -77,7 +80,7 @@ export default function PlayerCard({
 
 function Badge({ label }: { label: string }) {
   return (
-    <span className="absolute -right-1 -top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-background">
+    <span className="absolute -right-1 -top-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-0.5 text-[9px] font-bold text-background">
       {label}
     </span>
   );

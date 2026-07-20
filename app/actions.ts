@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { League, Player } from "@/types";
+import type { ChipName, League, Player } from "@/types";
+import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
 import { marketPlayers, players } from "@/lib/data";
 import { findLeagueByCode, findLeagueById } from "@/lib/leagues";
 import {
@@ -43,6 +44,63 @@ export async function captainAction(id: number): Promise<ActionResult> {
 
 export async function viceCaptainAction(id: number): Promise<ActionResult> {
   return mutateSquad((squad) => applyViceCaptain(squad, id));
+}
+
+/**
+ * Active un jeton bonus. Règles FPL : chaque jeton est à usage unique
+ * sur la saison et un seul jeton peut être actif par journée. Le Free
+ * Hit sauvegarde l'équipe courante pour pouvoir la restaurer.
+ */
+export async function activateChipAction(chip: ChipName): Promise<ActionResult> {
+  if (!CHIP_INFO[chip]) return { ok: false, error: "Jeton inconnu." };
+
+  const team = await getTeam();
+  if (team.chips[chip] === "used")
+    return { ok: false, error: `« ${CHIP_INFO[chip].label} » a déjà été consommé cette saison.` };
+  if (team.chips[chip] === "active")
+    return { ok: false, error: `« ${CHIP_INFO[chip].label} » est déjà actif.` };
+  const current = activeChip(team.chips);
+  if (current)
+    return {
+      ok: false,
+      error: `Un seul jeton par journée : « ${CHIP_INFO[current].label} » est déjà actif.`,
+    };
+
+  await saveTeam({
+    ...team,
+    chips: { ...team.chips, [chip]: "active" },
+    freeHitSnapshot:
+      chip === "freeHit"
+        ? { squad: team.squad, bank: team.bank }
+        : team.freeHitSnapshot,
+  });
+  revalidatePath("/");
+  revalidatePath("/transferts");
+  return { ok: true };
+}
+
+/**
+ * Désactive un jeton avant la deadline. Désactiver le Free Hit
+ * restaure l'équipe et la banque sauvegardées à l'activation.
+ */
+export async function deactivateChipAction(chip: ChipName): Promise<ActionResult> {
+  if (!CHIP_INFO[chip]) return { ok: false, error: "Jeton inconnu." };
+
+  const team = await getTeam();
+  if (team.chips[chip] !== "active")
+    return { ok: false, error: `« ${CHIP_INFO[chip].label} » n'est pas actif.` };
+
+  const restore = chip === "freeHit" ? team.freeHitSnapshot : null;
+  await saveTeam({
+    ...team,
+    squad: restore ? restore.squad : team.squad,
+    bank: restore ? restore.bank : team.bank,
+    chips: { ...team.chips, [chip]: "available" },
+    freeHitSnapshot: chip === "freeHit" ? null : team.freeHitSnapshot,
+  });
+  revalidatePath("/");
+  revalidatePath("/transferts");
+  return { ok: true };
 }
 
 /** Rejoint une ligue via son code d'invitation. */
@@ -156,12 +214,16 @@ export async function saveTransfersAction(entries: SquadEntry[]): Promise<Action
   const bank = computeBank(team.bank, team.squad, squad);
   if (bank < 0) return { ok: false, error: "Budget insuffisant." };
 
+  // Joker ou Free Hit actif : les transferts sont gratuits et illimités,
+  // le compteur de transferts gratuits n'est pas entamé.
   const transfers = countTransfers(team.squad, squad);
   await saveTeam({
     ...team,
     squad,
     bank,
-    freeTransfers: Math.max(0, team.freeTransfers - transfers),
+    freeTransfers: transfersUnlimited(team.chips)
+      ? team.freeTransfers
+      : Math.max(0, team.freeTransfers - transfers),
   });
   revalidatePath("/");
   revalidatePath("/transferts");

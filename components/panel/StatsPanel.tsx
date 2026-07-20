@@ -6,9 +6,12 @@ import DeadlineCountdown from "@/components/panel/DeadlineCountdown";
 export default function StatsPanel({
   stats,
   gameweek,
+  activeChipLabel = null,
 }: {
   stats: ManagerStats;
   gameweek: Gameweek;
+  /** Libellé du jeton bonus actif, le cas échéant. */
+  activeChipLabel?: string | null;
 }) {
   return (
     <aside className="flex flex-col gap-4">
@@ -57,6 +60,11 @@ export default function StatsPanel({
           </span>
         </div>
         <DeadlineCountdown deadline={gameweek.deadline} />
+        {activeChipLabel ? (
+          <p className="mt-3 rounded-lg bg-accent/10 px-3 py-2 text-xs font-semibold text-accent">
+            Jeton actif : {activeChipLabel}
+          </p>
+        ) : null}
         <p className="mt-3 text-xs text-muted">
           {stats.freeTransfers > 1
             ? `${stats.freeTransfers} transferts gratuits restants avant la deadline.`

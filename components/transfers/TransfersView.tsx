@@ -27,11 +27,14 @@ export default function TransfersView({
   market,
   initialBank,
   freeTransfers,
+  unlimitedChipLabel = null,
 }: {
   initialSquad: Player[];
   market: Player[];
   initialBank: number;
   freeTransfers: number;
+  /** Libellé du jeton actif rendant les transferts gratuits (Joker/Free Hit). */
+  unlimitedChipLabel?: string | null;
 }) {
   // Effectif « sauvegardé » : la référence pour compter les transferts.
   const [savedSquad, setSavedSquad] = useState(initialSquad);
@@ -53,7 +56,9 @@ export default function TransfersView({
   );
   const bank = computeBank(savedBank, savedSquad, squad);
   const transfers = countTransfers(savedSquad, squad);
-  const pointCost = transfersPointCost(transfers, freeTransfers);
+  const pointCost = unlimitedChipLabel
+    ? 0
+    : transfersPointCost(transfers, freeTransfers);
   const outgoing = squad.find((p) => p.id === outgoingId) ?? null;
 
   // Pool complet : joueurs du marché + joueurs vendus, moins l'effectif courant.
@@ -126,7 +131,10 @@ export default function TransfersView({
           <Summary label="Transferts" value={String(transfers)} />
           <Summary
             label="Coût en points"
-            value={pointCost > 0 ? `-${pointCost} pts` : "0 pt"}
+            value={
+              unlimitedChipLabel ? "Gratuit" : pointCost > 0 ? `-${pointCost} pts` : "0 pt"
+            }
+            accent={unlimitedChipLabel !== null}
             danger={pointCost > 0}
           />
           <div className="ml-auto flex gap-2">
@@ -146,6 +154,11 @@ export default function TransfersView({
             </button>
           </div>
         </div>
+        {unlimitedChipLabel ? (
+          <p className="mt-2 text-xs font-semibold text-accent">
+            {`${unlimitedChipLabel} actif — transferts illimités et gratuits jusqu'à la deadline.`}
+          </p>
+        ) : null}
         {confirmed ? (
           <p className="mt-2 text-xs font-semibold text-accent">
             Transferts confirmés et sauvegardés ✓

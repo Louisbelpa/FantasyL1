@@ -20,7 +20,15 @@ import Bench from "@/components/pitch/Bench";
  * sont appliqués immédiatement (optimiste) puis persistés via Server
  * Actions ; en cas d'erreur serveur, l'état est restauré.
  */
-export default function SquadBoard({ squad: serverSquad }: { squad: Player[] }) {
+export default function SquadBoard({
+  squad: serverSquad,
+  tripleCaptain = false,
+  benchBoost = false,
+}: {
+  squad: Player[];
+  tripleCaptain?: boolean;
+  benchBoost?: boolean;
+}) {
   const [squad, setSquad] = useState(serverSquad);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [swapMode, setSwapMode] = useState(false);
@@ -154,6 +162,7 @@ export default function SquadBoard({ squad: serverSquad }: { squad: Player[] }) 
         selectedId={selectedId}
         eligibleIds={eligibleIds}
         swapMode={swapMode}
+        tripleCaptain={tripleCaptain}
       />
       <Bench
         players={bench}
@@ -161,6 +170,7 @@ export default function SquadBoard({ squad: serverSquad }: { squad: Player[] }) 
         selectedId={selectedId}
         eligibleIds={eligibleIds}
         swapMode={swapMode}
+        boosted={benchBoost}
       />
     </div>
   );

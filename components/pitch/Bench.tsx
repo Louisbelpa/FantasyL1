@@ -9,11 +9,21 @@ export default function Bench({
   selectedId,
   eligibleIds,
   swapMode = false,
-}: { players: Player[] } & PitchInteraction) {
+  boosted = false,
+}: { players: Player[]; boosted?: boolean } & PitchInteraction) {
   return (
-    <section className="mt-4 rounded-2xl border border-edge bg-surface p-4">
+    <section
+      className={`mt-4 rounded-2xl border bg-surface p-4 ${
+        boosted ? "border-accent/60" : "border-edge"
+      }`}
+    >
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
         Banc de touche
+        {boosted ? (
+          <span className="ml-2 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">
+            Bench Boost actif — ces points comptent
+          </span>
+        ) : null}
       </h2>
       <div className="flex justify-evenly gap-2 overflow-x-auto">
         {players.map((player) => (

@@ -39,6 +39,9 @@ data/         Données mock (15 joueurs fictifs) en attendant l'API de stats
   généré), classement par ligue
 - Classements : général et par journée, tendance ▲▼, équipe de l'utilisateur
   épinglée
+- Jetons bonus à la FPL : Triple Capitaine, Bench Boost, Joker (transferts
+  illimités), Free Hit (équipe restaurée) — un seul actif par journée, usage
+  unique par saison
 - Persistance serveur via Server Actions et un store fichier
   (`.store/team.json`, gitignoré) — API async prête pour une vraie base de
   données

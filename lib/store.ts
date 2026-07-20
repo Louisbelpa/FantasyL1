@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
-import type { League, Player } from "@/types";
+import type { Chips, League, Player } from "@/types";
+import { defaultChips } from "@/lib/chips";
 import { managerStats, players } from "@/lib/data";
 
 /**
@@ -19,6 +20,10 @@ export interface TeamState {
   joinedLeagueIds: string[];
   /** Ligues créées par le manager. */
   customLeagues: League[];
+  /** Jetons bonus (disponible / actif / consommé). */
+  chips: Chips;
+  /** Équipe sauvegardée à l'activation du Free Hit, restaurée ensuite. */
+  freeHitSnapshot: { squad: Player[]; bank: number } | null;
   updatedAt: string;
 }
 
@@ -31,6 +36,8 @@ function seed(): TeamState {
     freeTransfers: managerStats.freeTransfers,
     joinedLeagueIds: ["ligue-potos", "ligue-generale"],
     customLeagues: [],
+    chips: defaultChips(),
+    freeHitSnapshot: null,
     updatedAt: new Date(0).toISOString(),
   };
 }

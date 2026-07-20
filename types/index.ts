@@ -52,6 +52,13 @@ export interface Gameweek {
   deadline: string;
 }
 
+/** Jetons bonus activables, à la FPL. */
+export type ChipName = "tripleCaptain" | "benchBoost" | "wildcard" | "freeHit";
+
+export type ChipStatus = "available" | "active" | "used";
+
+export type Chips = Record<ChipName, ChipStatus>;
+
 /** Manager fictif peuplant les classements et les ligues. */
 export interface RivalManager {
   id: number;

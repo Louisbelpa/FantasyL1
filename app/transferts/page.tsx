@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageHeader from "@/components/ui/PageHeader";
 import TransfersView from "@/components/transfers/TransfersView";
+import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
 import { marketPlayers, players } from "@/lib/data";
 import { getTeam } from "@/lib/store";
 
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TransfertsPage() {
   const team = await getTeam();
+  const chip = activeChip(team.chips);
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6">
@@ -23,6 +25,9 @@ export default async function TransfertsPage() {
         market={[...players, ...marketPlayers]}
         initialBank={team.bank}
         freeTransfers={team.freeTransfers}
+        unlimitedChipLabel={
+          chip && transfersUnlimited(team.chips) ? CHIP_INFO[chip].label : null
+        }
       />
     </main>
   );

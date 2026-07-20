@@ -8,6 +8,8 @@ export interface PitchInteraction {
   eligibleIds?: ReadonlySet<number>;
   /** En mode échange, grise les joueurs non éligibles. */
   swapMode?: boolean;
+  /** Triple Capitaine actif : badge ×3 sur le capitaine. */
+  tripleCaptain?: boolean;
 }
 
 /**
@@ -20,6 +22,7 @@ export default function Pitch({
   selectedId,
   eligibleIds,
   swapMode = false,
+  tripleCaptain = false,
 }: { starters: Player[] } & PitchInteraction) {
   const lines = groupByLine(starters);
 
@@ -54,6 +57,7 @@ export default function Pitch({
                 dimmed={
                   swapMode && player.id !== selectedId && !eligibleIds?.has(player.id)
                 }
+                tripleCaptain={tripleCaptain}
               />
             ))}
           </div>
