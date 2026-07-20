@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import type { Player } from "@/types";
+import type { League, Player } from "@/types";
 import { managerStats, players } from "@/lib/data";
 
 /**
@@ -15,6 +15,10 @@ export interface TeamState {
   /** Banque restante en millions d'euros. */
   bank: number;
   freeTransfers: number;
+  /** Ids des ligues (mock ou créées) dont le manager est membre. */
+  joinedLeagueIds: string[];
+  /** Ligues créées par le manager. */
+  customLeagues: League[];
   updatedAt: string;
 }
 
@@ -25,6 +29,8 @@ function seed(): TeamState {
     squad: players,
     bank: managerStats.bank,
     freeTransfers: managerStats.freeTransfers,
+    joinedLeagueIds: ["ligue-potos", "ligue-generale"],
+    customLeagues: [],
     updatedAt: new Date(0).toISOString(),
   };
 }
@@ -32,7 +38,8 @@ function seed(): TeamState {
 export async function getTeam(): Promise<TeamState> {
   try {
     const raw = await fs.readFile(STORE_FILE, "utf8");
-    return JSON.parse(raw) as TeamState;
+    // Les champs ajoutés après coup sont rétro-remplis depuis le seed.
+    return { ...seed(), ...(JSON.parse(raw) as Partial<TeamState>) };
   } catch {
     // Premier accès (ou fichier corrompu) : repartir du seed mock.
     const state = seed();

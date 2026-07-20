@@ -1,0 +1,22 @@
+[
+  { "id": 1, "teamName": "FC Canapé", "managerName": "Julien R.", "gameweekPoints": 88, "totalPoints": 88, "previousRank": 3 },
+  { "id": 2, "teamName": "Les Dribbleurs Fous", "managerName": "Sarah M.", "gameweekPoints": 86, "totalPoints": 86, "previousRank": 1 },
+  { "id": 3, "teamName": "Vélodrome Dreamers", "managerName": "Karim A.", "gameweekPoints": 85, "totalPoints": 85, "previousRank": 6 },
+  { "id": 4, "teamName": "Sainté Forever", "managerName": "Manon D.", "gameweekPoints": 83, "totalPoints": 83, "previousRank": 2 },
+  { "id": 5, "teamName": "Gones United", "managerName": "Théo L.", "gameweekPoints": 82, "totalPoints": 82, "previousRank": 9 },
+  { "id": 6, "teamName": "Parc des Princes 2.0", "managerName": "Awa S.", "gameweekPoints": 81, "totalPoints": 81, "previousRank": 4 },
+  { "id": 7, "teamName": "Les Sang et Or", "managerName": "Nicolas P.", "gameweekPoints": 80, "totalPoints": 80, "previousRank": 12 },
+  { "id": 8, "teamName": "Brestois Squad", "managerName": "Élodie G.", "gameweekPoints": 79, "totalPoints": 79, "previousRank": 5 },
+  { "id": 9, "teamName": "Tacticos du Dimanche", "managerName": "Mehdi B.", "gameweekPoints": 78, "totalPoints": 78, "previousRank": 7 },
+  { "id": 10, "teamName": "La Remontada", "managerName": "Claire V.", "gameweekPoints": 77, "totalPoints": 77, "previousRank": 15 },
+  { "id": 11, "teamName": "Rocher Monégasque", "managerName": "Paul T.", "gameweekPoints": 76, "totalPoints": 76, "previousRank": 8 },
+  { "id": 12, "teamName": "Les Crampons Cassés", "managerName": "Inès K.", "gameweekPoints": 75, "totalPoints": 75, "previousRank": 10 },
+  { "id": 13, "teamName": "Breizh Attack", "managerName": "Yann Q.", "gameweekPoints": 74, "totalPoints": 74, "previousRank": 18 },
+  { "id": 14, "teamName": "Le Pressing Haut", "managerName": "Romain F.", "gameweekPoints": 73, "totalPoints": 73, "previousRank": 11 },
+  { "id": 15, "teamName": "Allez les Violets", "managerName": "Lucie H.", "gameweekPoints": 72, "totalPoints": 72, "previousRank": 13 },
+  { "id": 16, "teamName": "Nissa la Bella FC", "managerName": "Antoine C.", "gameweekPoints": 72, "totalPoints": 72, "previousRank": 20 },
+  { "id": 17, "teamName": "Corner Rentrant", "managerName": "Fatou N.", "gameweekPoints": 71, "totalPoints": 71, "previousRank": 14 },
+  { "id": 18, "teamName": "Les Remplaçants", "managerName": "Hugo M.", "gameweekPoints": 70, "totalPoints": 70, "previousRank": 16 },
+  { "id": 19, "teamName": "Canaris Volants", "managerName": "Emma B.", "gameweekPoints": 69, "totalPoints": 69, "previousRank": 17 },
+  { "id": 20, "teamName": "Hors-Jeu Permanent", "managerName": "Bastien J.", "gameweekPoints": 68, "totalPoints": 68, "previousRank": 19 }
+]

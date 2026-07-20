@@ -30,6 +30,17 @@ data/         Données mock (15 joueurs fictifs) en attendant l'API de stats
 
 ## État du MVP
 
-- Écran « Ma Composition » : terrain 4-4-2, banc de touche, stats de la journée, compte à rebours de deadline
-- Navigation globale (bottom bar mobile / header desktop)
-- Données mockées dans `data/players.json` — à remplacer par une API de statistiques sportives
+- Écran « Ma Composition » : terrain interactif (capitaine, vice-capitaine,
+  remplacements avec règles de formation), banc de touche, stats, compte à
+  rebours de deadline
+- Transferts : marché filtrable, budget, max 3 joueurs par club, coût en
+  points au-delà du transfert gratuit
+- Ligues : rejoindre par code d'invitation, créer une ligue privée (code
+  généré), classement par ligue
+- Classements : général et par journée, tendance ▲▼, équipe de l'utilisateur
+  épinglée
+- Persistance serveur via Server Actions et un store fichier
+  (`.store/team.json`, gitignoré) — API async prête pour une vraie base de
+  données
+- Données mockées dans `data/` — à remplacer par une API de statistiques
+  sportives

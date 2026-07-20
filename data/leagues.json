@@ -1,0 +1,23 @@
+[
+  {
+    "id": "ligue-potos",
+    "name": "La Ligue des Potos",
+    "code": "POTOS26",
+    "type": "privée",
+    "memberIds": [1, 4, 7, 9, 12, 15]
+  },
+  {
+    "id": "le-bureau",
+    "name": "Le Bureau",
+    "code": "BUREAU7",
+    "type": "privée",
+    "memberIds": [2, 5, 8, 11, 14, 17]
+  },
+  {
+    "id": "ligue-generale",
+    "name": "Ligue 1 Générale",
+    "code": "L1PUBLIC",
+    "type": "publique",
+    "memberIds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  }
+]

@@ -1,21 +1,37 @@
 import type { Metadata } from "next";
 import PageHeader from "@/components/ui/PageHeader";
+import LeaguesView, { type LeagueSummary } from "@/components/leagues/LeaguesView";
+import { allLeagues, userRankInLeague } from "@/lib/leagues";
+import { getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Ligues" };
 
-export default function LiguesPage() {
+// Les adhésions sont lues depuis le store serveur à chaque requête.
+export const dynamic = "force-dynamic";
+
+export default async function LiguesPage() {
+  const team = await getTeam();
+  const customIds = new Set(team.customLeagues.map((l) => l.id));
+
+  const leagues: LeagueSummary[] = allLeagues(team)
+    .filter((l) => team.joinedLeagueIds.includes(l.id))
+    .map((l) => ({
+      id: l.id,
+      name: l.name,
+      code: l.code,
+      type: l.type,
+      members: l.memberIds.length + 1,
+      myRank: userRankInLeague(l),
+      isCustom: customIds.has(l.id),
+    }));
+
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6">
       <PageHeader
         title="Ligues"
         subtitle="Affrontez vos amis dans des ligues privées ou publiques."
       />
-      <div className="rounded-xl border border-edge bg-surface p-8 text-center">
-        <p className="text-muted">
-          Créez ou rejoignez une ligue avec un code d&apos;invitation. Cette
-          fonctionnalité arrive bientôt.
-        </p>
-      </div>
+      <LeaguesView leagues={leagues} />
     </main>
   );
 }

@@ -1,8 +1,10 @@
 {
   "teamName": "Les Néons Verts",
+  "managerName": "Louis B.",
   "gameweekPoints": 71,
   "totalPoints": 71,
   "overallRank": 128432,
+  "previousOverallRank": 143210,
   "gameweekRank": 95210,
   "bank": 4.0,
   "teamValue": 96.0,

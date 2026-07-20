@@ -52,11 +52,37 @@ export interface Gameweek {
   deadline: string;
 }
 
+/** Manager fictif peuplant les classements et les ligues. */
+export interface RivalManager {
+  id: number;
+  teamName: string;
+  managerName: string;
+  gameweekPoints: number;
+  totalPoints: number;
+  /** Rang au classement général à la journée précédente. */
+  previousRank: number;
+}
+
+export type LeagueType = "privée" | "publique";
+
+export interface League {
+  id: string;
+  name: string;
+  /** Code d'invitation à partager. */
+  code: string;
+  type: LeagueType;
+  /** Ids des RivalManager membres (l'utilisateur s'ajoute via le store). */
+  memberIds: number[];
+}
+
 export interface ManagerStats {
   teamName: string;
+  managerName: string;
   gameweekPoints: number;
   totalPoints: number;
   overallRank: number;
+  /** Rang général à la journée précédente (pour la tendance ▲▼). */
+  previousOverallRank: number;
   gameweekRank: number;
   /** Budget restant en banque, en millions d'euros. */
   bank: number;

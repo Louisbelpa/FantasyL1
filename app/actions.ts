@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { Player } from "@/types";
+import type { League, Player } from "@/types";
 import { marketPlayers, players } from "@/lib/data";
+import { findLeagueByCode, findLeagueById } from "@/lib/leagues";
 import {
   applyCaptain,
   applySubstitution,
@@ -42,6 +43,76 @@ export async function captainAction(id: number): Promise<ActionResult> {
 
 export async function viceCaptainAction(id: number): Promise<ActionResult> {
   return mutateSquad((squad) => applyViceCaptain(squad, id));
+}
+
+/** Rejoint une ligue via son code d'invitation. */
+export async function joinLeagueAction(code: string): Promise<ActionResult> {
+  const trimmed = code.trim();
+  if (!trimmed) return { ok: false, error: "Saisissez un code d'invitation." };
+
+  const team = await getTeam();
+  const league = findLeagueByCode(team, trimmed);
+  if (!league) return { ok: false, error: "Aucune ligue ne correspond à ce code." };
+  if (team.joinedLeagueIds.includes(league.id))
+    return { ok: false, error: `Vous êtes déjà membre de « ${league.name} ».` };
+
+  await saveTeam({ ...team, joinedLeagueIds: [...team.joinedLeagueIds, league.id] });
+  revalidatePath("/ligues");
+  return { ok: true };
+}
+
+/** Crée une ligue privée et en devient membre. */
+export async function createLeagueAction(name: string): Promise<ActionResult> {
+  const trimmed = name.trim();
+  if (trimmed.length < 3 || trimmed.length > 40)
+    return { ok: false, error: "Le nom doit faire entre 3 et 40 caractères." };
+
+  const team = await getTeam();
+  const exists = team.customLeagues.some(
+    (l) => l.name.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (exists) return { ok: false, error: "Vous avez déjà une ligue à ce nom." };
+
+  // Code d'invitation lisible : 6 caractères sans ambiguïté (pas de O/0, I/1).
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code: string;
+  do {
+    code = Array.from(
+      { length: 6 },
+      () => alphabet[Math.floor(Math.random() * alphabet.length)],
+    ).join("");
+  } while (findLeagueByCode(team, code));
+
+  const league: League = {
+    id: `perso-${Date.now().toString(36)}`,
+    name: trimmed,
+    code,
+    type: "privée",
+    memberIds: [],
+  };
+  await saveTeam({
+    ...team,
+    customLeagues: [...team.customLeagues, league],
+    joinedLeagueIds: [...team.joinedLeagueIds, league.id],
+  });
+  revalidatePath("/ligues");
+  return { ok: true };
+}
+
+/** Quitte une ligue (une ligue créée par le manager est supprimée). */
+export async function leaveLeagueAction(id: string): Promise<ActionResult> {
+  const team = await getTeam();
+  const league = findLeagueById(team, id);
+  if (!league || !team.joinedLeagueIds.includes(id))
+    return { ok: false, error: "Vous n'êtes pas membre de cette ligue." };
+
+  await saveTeam({
+    ...team,
+    joinedLeagueIds: team.joinedLeagueIds.filter((l) => l !== id),
+    customLeagues: team.customLeagues.filter((l) => l.id !== id),
+  });
+  revalidatePath("/ligues");
+  return { ok: true };
 }
 
 /** Rôle d'un joueur dans l'effectif envoyé par le client. */
@@ -87,6 +158,7 @@ export async function saveTransfersAction(entries: SquadEntry[]): Promise<Action
 
   const transfers = countTransfers(team.squad, squad);
   await saveTeam({
+    ...team,
     squad,
     bank,
     freeTransfers: Math.max(0, team.freeTransfers - transfers),
