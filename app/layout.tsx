@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
 import NavBar from "@/components/navigation/NavBar";
+import SiteFooter from "@/components/navigation/SiteFooter";
 import { isAuthEnabled } from "@/lib/auth";
 import "./globals.css";
 
@@ -44,13 +44,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans pb-16 md:pb-0">
         <NavBar authEnabled={authEnabled} />
         {children}
-        <footer className="border-t border-edge px-4 py-4 text-center text-xs text-muted">
-          <Link href="/regles" className="hover:text-accent">
-            Règles du jeu &amp; barème
-          </Link>
-          <span className="mx-2">·</span>
-          Fantasy Ligue 1 — MVP, données fictives ou fournies par API-Football
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );

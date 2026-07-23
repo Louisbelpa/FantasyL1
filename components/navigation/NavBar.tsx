@@ -14,6 +14,9 @@ const NAV_LINKS = [
 export default function NavBar({ authEnabled = false }: { authEnabled?: boolean }) {
   const pathname = usePathname();
 
+  // La landing publique a son propre habillage (masthead + footer).
+  if (pathname === "/accueil") return null;
+
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 

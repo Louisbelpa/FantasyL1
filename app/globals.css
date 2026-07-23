@@ -8,10 +8,12 @@
   --color-surface-raised: #1a2236;
   --color-edge: #232d45;
   --color-muted: #8a94a8;
-  --color-pitch-dark: #0a5c2e;
-  --color-pitch-light: #0e7038;
+  --color-pitch-dark: #0e4429;
+  --color-pitch-light: #0f4b2e;
   --color-danger: #ff5252;
   --color-warning: #ffb300;
+  /* Blocs « scoreboard » : panneaux de données qui comptent, sur noir pur. */
+  --color-scoreboard: #000000;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -19,4 +21,18 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+}
+
+/* Bandeau défilant « broadcast » de la landing. */
+@keyframes fl1-ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  animation: fl1-ticker 34s linear infinite;
 }
