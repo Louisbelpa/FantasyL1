@@ -9,7 +9,7 @@ export default function NotFound() {
         Cette page n&apos;existe pas ou a été déplacée.
       </p>
       <Link
-        href="/"
+        href="/equipe"
         className="rounded-lg bg-accent px-4 py-2 text-sm font-bold text-background transition-opacity hover:opacity-90"
       >
         Retour à Mon Équipe

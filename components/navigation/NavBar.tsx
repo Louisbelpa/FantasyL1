@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 
 const NAV_LINKS = [
-  { href: "/", label: "Mon Équipe", icon: ShirtIcon },
+  { href: "/equipe", label: "Mon Équipe", icon: ShirtIcon },
   { href: "/transferts", label: "Transferts", icon: TransfersIcon },
   { href: "/ligues", label: "Ligues", icon: TrophyIcon },
   { href: "/classements", label: "Classements", icon: RankingIcon },
@@ -14,18 +14,17 @@ const NAV_LINKS = [
 export default function NavBar({ authEnabled = false }: { authEnabled?: boolean }) {
   const pathname = usePathname();
 
-  // La landing publique a son propre habillage (masthead + footer).
-  if (pathname === "/accueil") return null;
+  // La landing publique (racine) a son propre habillage (masthead + footer).
+  if (pathname === "/") return null;
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const isActive = (href: string) => pathname.startsWith(href);
 
   return (
     <>
       {/* Header desktop */}
       <header className="sticky top-0 z-40 hidden border-b border-edge bg-surface/90 backdrop-blur md:block">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-8 px-6">
-          <Link href="/" className="text-lg font-extrabold tracking-tight">
+          <Link href="/equipe" className="text-lg font-extrabold tracking-tight">
             Fantasy<span className="text-accent">L1</span>
           </Link>
           <nav className="flex gap-1">

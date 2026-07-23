@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 /** Footer applicatif, masqué sur la landing publique (habillage propre). */
 export default function SiteFooter() {
   const pathname = usePathname();
-  if (pathname === "/accueil") return null;
+  if (pathname === "/") return null;
 
   return (
     <footer className="border-t border-edge px-4 py-4 text-center text-xs text-muted">

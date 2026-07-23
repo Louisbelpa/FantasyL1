@@ -53,7 +53,7 @@ async function mutateSquad(
   const invalid = squadInvalidReason(result);
   if (invalid) return { ok: false, error: invalid };
   await saveTeam(userId, { ...team, squad: result });
-  revalidatePath("/");
+  revalidatePath("/equipe");
   revalidatePath("/transferts");
   return { ok: true };
 }
@@ -104,7 +104,7 @@ export async function activateChipAction(chip: ChipName): Promise<ActionResult> 
         ? { squad: team.squad, bank: team.bank }
         : team.freeHitSnapshot,
   });
-  revalidatePath("/");
+  revalidatePath("/equipe");
   revalidatePath("/transferts");
   return { ok: true };
 }
@@ -131,7 +131,7 @@ export async function deactivateChipAction(chip: ChipName): Promise<ActionResult
     chips: { ...team.chips, [chip]: "available" },
     freeHitSnapshot: chip === "freeHit" ? null : team.freeHitSnapshot,
   });
-  revalidatePath("/");
+  revalidatePath("/equipe");
   revalidatePath("/transferts");
   return { ok: true };
 }
@@ -193,7 +193,7 @@ export async function syncFromApiAction(): Promise<ActionResult> {
       await saveTeam(userId, { ...team, squad });
     }
 
-    revalidatePath("/");
+    revalidatePath("/equipe");
     revalidatePath("/transferts");
     return { ok: true };
   } catch (cause) {
@@ -271,7 +271,7 @@ export async function createTeamAction(
     seasonPoints: 0,
     gameweekHistory: [],
   });
-  revalidatePath("/");
+  revalidatePath("/equipe");
   revalidatePath("/transferts");
   revalidatePath("/classements");
   revalidatePath("/ligues");
@@ -421,7 +421,7 @@ export async function saveTransfersAction(entries: SquadEntry[]): Promise<Action
       ? team.freeTransfers
       : Math.max(0, team.freeTransfers - transfers),
   });
-  revalidatePath("/");
+  revalidatePath("/equipe");
   revalidatePath("/transferts");
   return { ok: true };
 }

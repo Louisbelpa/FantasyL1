@@ -7,11 +7,16 @@ export const metadata: Metadata = { title: "Connexion" };
 
 export default function ConnexionPage() {
   // Sans Clerk configuré, pas de connexion : mode mono-utilisateur.
-  if (!isAuthEnabled()) redirect("/");
+  if (!isAuthEnabled()) redirect("/equipe");
 
   return (
     <main className="flex flex-1 items-center justify-center px-4 py-10">
-      <SignIn routing="path" path="/connexion" />
+      <SignIn
+        routing="path"
+        path="/connexion"
+        fallbackRedirectUrl="/equipe"
+        signUpUrl="/connexion"
+      />
     </main>
   );
 }

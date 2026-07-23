@@ -81,7 +81,7 @@ export async function runSettlementAll(): Promise<SettleResult> {
       gameweek: nextGameweek,
     });
 
-    revalidatePath("/");
+    revalidatePath("/equipe");
     revalidatePath("/transferts");
     revalidatePath("/classements");
     return { ok: true, settled };
