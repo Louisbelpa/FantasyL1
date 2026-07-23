@@ -8,7 +8,7 @@ import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
 import { marketPlayers, players } from "@/lib/data";
 import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { findLeagueByCode, findLeagueById } from "@/lib/leagues";
-import { runSettlement } from "@/lib/settle-run";
+import { runSettlementAll } from "@/lib/settle-run";
 import { TOTAL_BUDGET } from "@/lib/constants";
 import { defaultChips } from "@/lib/chips";
 import {
@@ -18,14 +18,21 @@ import {
   squadInvalidReason,
   substitutionBlockReason,
 } from "@/lib/squad";
-import { getTeam, saveTeam } from "@/lib/store";
+import {
+  getGlobal,
+  getTeam,
+  listUserIds,
+  saveGlobal,
+  saveTeam,
+  type GlobalState,
+} from "@/lib/store";
 import { computeBank, countTransfers } from "@/lib/transfers";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 /** Équipe verrouillée entre la deadline et la clôture de la journée. */
-function deadlineBlock(team: Awaited<ReturnType<typeof getTeam>>): ActionResult | null {
-  const gameweek = currentGameweek(team);
+function deadlineBlock(global: GlobalState): ActionResult | null {
+  const gameweek = currentGameweek(global);
   if (isDeadlinePassed(gameweek))
     return {
       ok: false,
@@ -39,7 +46,7 @@ async function mutateSquad(
 ): Promise<ActionResult> {
   const userId = await requireUserId();
   const team = await getTeam(userId);
-  const blocked = deadlineBlock(team);
+  const blocked = deadlineBlock(await getGlobal());
   if (blocked) return blocked;
   const result = mutate(team.squad);
   if (typeof result === "string") return { ok: false, error: result };
@@ -76,7 +83,7 @@ export async function activateChipAction(chip: ChipName): Promise<ActionResult> 
 
   const userId = await requireUserId();
   const team = await getTeam(userId);
-  const blocked = deadlineBlock(team);
+  const blocked = deadlineBlock(await getGlobal());
   if (blocked) return blocked;
   if (team.chips[chip] === "used")
     return { ok: false, error: `« ${CHIP_INFO[chip].label} » a déjà été consommé cette saison.` };
@@ -111,7 +118,7 @@ export async function deactivateChipAction(chip: ChipName): Promise<ActionResult
 
   const userId = await requireUserId();
   const team = await getTeam(userId);
-  const blocked = deadlineBlock(team);
+  const blocked = deadlineBlock(await getGlobal());
   if (blocked) return blocked;
   if (team.chips[chip] !== "active")
     return { ok: false, error: `« ${CHIP_INFO[chip].label} » n'est pas actif.` };
@@ -145,6 +152,10 @@ export async function syncFromApiAction(): Promise<ActionResult> {
     };
 
   try {
+    // Réservé aux administrateurs : la synchronisation est globale et
+    // affecte tous les managers, pas seulement l'appelant.
+    await requireUserId();
+
     const { gameweek, opponents } = await fetchNextGameweek();
     const catalogue = await fetchCatalogue(opponents);
     if (catalogue.length === 0)
@@ -154,30 +165,34 @@ export async function syncFromApiAction(): Promise<ActionResult> {
           "Synchronisation vide : vérifiez la saison (API_FOOTBALL_SEASON) et le mapping des clubs.",
       };
 
-    const userId = await requireUserId();
-    const team = await getTeam(userId);
-    const byId = new Map(catalogue.map((p) => [p.id, p]));
-    const squad = team.squad.map((p) => {
-      const fresh = byId.get(p.id);
-      return fresh
-        ? {
-            ...fresh,
-            price: p.price,
-            isStarter: p.isStarter,
-            isCaptain: p.isCaptain,
-            isViceCaptain: p.isViceCaptain,
-          }
-        : p;
-    });
-
-    await saveTeam(userId, {
-      ...team,
-      squad,
+    // Catalogue et journée sont partagés par tous les managers.
+    await saveGlobal({
       catalogue,
-      apiGameweek: gameweek,
+      gameweek,
       dataSource: "api",
       lastSyncAt: new Date().toISOString(),
     });
+
+    // Rafraîchit l'effectif de chaque manager (statut, adversaire) en
+    // conservant rôles et prix d'achat.
+    const byId = new Map(catalogue.map((p) => [p.id, p]));
+    for (const userId of await listUserIds()) {
+      const team = await getTeam(userId);
+      const squad = team.squad.map((p) => {
+        const fresh = byId.get(p.id);
+        return fresh
+          ? {
+              ...fresh,
+              price: p.price,
+              isStarter: p.isStarter,
+              isCaptain: p.isCaptain,
+              isViceCaptain: p.isViceCaptain,
+            }
+          : p;
+      });
+      await saveTeam(userId, { ...team, squad });
+    }
+
     revalidatePath("/");
     revalidatePath("/transferts");
     return { ok: true };
@@ -208,8 +223,9 @@ export async function createTeamAction(
 
   const userId = await requireUserId();
   const team = await getTeam(userId);
+  const { catalogue } = await getGlobal();
   const pool = new Map<number, Player>(
-    (team.catalogue ?? [...players, ...marketPlayers]).map((p) => [p.id, p]),
+    (catalogue ?? [...players, ...marketPlayers]).map((p) => [p.id, p]),
   );
 
   const picked: Player[] = [];
@@ -270,8 +286,10 @@ export async function createTeamAction(
  * (journée terminée exigée) ; en mode mock elles sont simulées.
  */
 export async function settleGameweekAction(): Promise<ActionResult> {
-  const userId = await requireUserId();
-  return runSettlement(userId);
+  // Réservé aux administrateurs : la clôture est globale.
+  await requireUserId();
+  const result = await runSettlementAll();
+  return result.ok ? { ok: true } : { ok: false, error: result.error };
 }
 
 /** Rejoint une ligue via son code d'invitation. */
@@ -365,10 +383,11 @@ export interface SquadEntry {
 export async function saveTransfersAction(entries: SquadEntry[]): Promise<ActionResult> {
   const userId = await requireUserId();
   const team = await getTeam(userId);
-  const blocked = deadlineBlock(team);
+  const global = await getGlobal();
+  const blocked = deadlineBlock(global);
   if (blocked) return blocked;
   const pool = new Map<number, Player>(
-    [...players, ...marketPlayers, ...(team.catalogue ?? [])].map((p) => [p.id, p]),
+    [...players, ...marketPlayers, ...(global.catalogue ?? [])].map((p) => [p.id, p]),
   );
 
   const squad: Player[] = [];

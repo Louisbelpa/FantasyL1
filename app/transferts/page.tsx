@@ -5,7 +5,7 @@ import { activeChip, CHIP_INFO, transfersUnlimited } from "@/lib/chips";
 import { marketPlayers, players } from "@/lib/data";
 import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { requireUserId } from "@/lib/auth";
-import { getTeam } from "@/lib/store";
+import { getGlobal, getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Transferts" };
 
@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TransfertsPage() {
   const team = await getTeam(await requireUserId());
+  const global = await getGlobal();
   const chip = activeChip(team.chips);
 
   return (
@@ -24,13 +25,13 @@ export default async function TransfertsPage() {
       />
       <TransfersView
         initialSquad={team.squad}
-        market={team.catalogue ?? [...players, ...marketPlayers]}
+        market={global.catalogue ?? [...players, ...marketPlayers]}
         initialBank={team.bank}
         freeTransfers={team.freeTransfers}
         unlimitedChipLabel={
           chip && transfersUnlimited(team.chips) ? CHIP_INFO[chip].label : null
         }
-        locked={isDeadlinePassed(currentGameweek(team))}
+        locked={isDeadlinePassed(currentGameweek(global))}
       />
     </main>
   );

@@ -34,12 +34,6 @@ export interface TeamState {
   chips: Chips;
   /** Équipe sauvegardée à l'activation du Free Hit, restaurée ensuite. */
   freeHitSnapshot: { squad: Player[]; bank: number } | null;
-  /** Catalogue de joueurs synchronisé depuis l'API (null = mocks). */
-  catalogue: Player[] | null;
-  /** Journée synchronisée depuis l'API (null = mock). */
-  apiGameweek: Gameweek | null;
-  dataSource: DataSource;
-  lastSyncAt: string | null;
   /** Points crédités sur la saison (journées clôturées). */
   seasonPoints: number;
   /** Journées clôturées, de la plus ancienne à la plus récente. */
@@ -75,10 +69,6 @@ function seed(): TeamState {
     customLeagues: [],
     chips: defaultChips(),
     freeHitSnapshot: null,
-    catalogue: null,
-    apiGameweek: null,
-    dataSource: "mock",
-    lastSyncAt: null,
     seasonPoints: managerStats.totalPoints,
     gameweekHistory: [
       {
@@ -138,6 +128,65 @@ export async function saveTeam(
   return next;
 }
 
+/**
+ * État global partagé par tous les managers : catalogue de joueurs et
+ * journée en cours, synchronisés une seule fois pour tout le monde
+ * (une copie par manager ne passerait pas à l'échelle, ni en stockage
+ * ni en quota API).
+ */
+export interface GlobalState {
+  /** Catalogue synchronisé depuis l'API (null = mocks). */
+  catalogue: Player[] | null;
+  /** Journée en cours synchronisée ou avancée par clôture (null = mock). */
+  gameweek: Gameweek | null;
+  dataSource: DataSource;
+  lastSyncAt: string | null;
+  updatedAt: string;
+}
+
+const GLOBAL_FILE = path.join(STORE_DIR, "global.json");
+
+function seedGlobal(): GlobalState {
+  return {
+    catalogue: null,
+    gameweek: null,
+    dataSource: "mock",
+    lastSyncAt: null,
+    updatedAt: new Date(0).toISOString(),
+  };
+}
+
+export async function getGlobal(): Promise<GlobalState> {
+  if (databaseEnabled()) {
+    const { dbGetGlobal } = await import("@/lib/db");
+    const existing = await dbGetGlobal();
+    if (existing) return { ...seedGlobal(), ...existing };
+    return saveGlobal(seedGlobal());
+  }
+  try {
+    const raw = await fs.readFile(GLOBAL_FILE, "utf8");
+    return { ...seedGlobal(), ...(JSON.parse(raw) as Partial<GlobalState>) };
+  } catch {
+    return saveGlobal(seedGlobal());
+  }
+}
+
+export async function saveGlobal(
+  state: Omit<GlobalState, "updatedAt">,
+): Promise<GlobalState> {
+  const next: GlobalState = { ...state, updatedAt: new Date().toISOString() };
+  if (databaseEnabled()) {
+    const { dbSaveGlobal } = await import("@/lib/db");
+    await dbSaveGlobal(next);
+    return next;
+  }
+  await fs.mkdir(STORE_DIR, { recursive: true });
+  const tmp = `${GLOBAL_FILE}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(next, null, 2), "utf8");
+  await fs.rename(tmp, GLOBAL_FILE);
+  return next;
+}
+
 /** Ids de tous les managers connus (pour le cron de clôture). */
 export async function listUserIds(): Promise<string[]> {
   if (databaseEnabled()) {
@@ -147,7 +196,7 @@ export async function listUserIds(): Promise<string[]> {
   try {
     const files = await fs.readdir(STORE_DIR);
     return files
-      .filter((f) => f.endsWith(".json"))
+      .filter((f) => f === "team.json" || (f.startsWith("team-") && f.endsWith(".json")))
       .map((f) =>
         f === "team.json" ? "local-dev" : f.replace(/^team-/, "").replace(/\.json$/, ""),
       );

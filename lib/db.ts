@@ -2,7 +2,7 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { eq, sql } from "drizzle-orm";
 import { Pool } from "pg";
-import type { TeamState } from "@/lib/store";
+import type { GlobalState, TeamState } from "@/lib/store";
 
 /**
  * Backend Postgres (Neon en production, n'importe quel Postgres en
@@ -25,16 +25,48 @@ function getDb(): NodePgDatabase {
   return db;
 }
 
-/** Crée la table au premier accès — pas encore de vraies migrations. */
+export const globals = pgTable("fantasy_global", {
+  id: text("id").primaryKey(),
+  state: jsonb("state").notNull().$type<GlobalState>(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Crée les tables au premier accès — pas encore de vraies migrations. */
 async function ensureSchema(): Promise<void> {
-  schemaReady ??= getDb().execute(sql`
-    CREATE TABLE IF NOT EXISTS fantasy_teams (
-      user_id text PRIMARY KEY,
-      state jsonb NOT NULL,
-      updated_at timestamptz NOT NULL DEFAULT now()
-    )
-  `);
+  schemaReady ??= (async () => {
+    await getDb().execute(sql`
+      CREATE TABLE IF NOT EXISTS fantasy_teams (
+        user_id text PRIMARY KEY,
+        state jsonb NOT NULL,
+        updated_at timestamptz NOT NULL DEFAULT now()
+      )
+    `);
+    await getDb().execute(sql`
+      CREATE TABLE IF NOT EXISTS fantasy_global (
+        id text PRIMARY KEY,
+        state jsonb NOT NULL,
+        updated_at timestamptz NOT NULL DEFAULT now()
+      )
+    `);
+  })();
   await schemaReady;
+}
+
+export async function dbGetGlobal(): Promise<GlobalState | null> {
+  await ensureSchema();
+  const rows = await getDb()
+    .select({ state: globals.state })
+    .from(globals)
+    .where(eq(globals.id, "global"));
+  return rows[0]?.state ?? null;
+}
+
+export async function dbSaveGlobal(state: GlobalState): Promise<void> {
+  await ensureSchema();
+  await getDb()
+    .insert(globals)
+    .values({ id: "global", state, updatedAt: new Date() })
+    .onConflictDoUpdate({ target: globals.id, set: { state, updatedAt: new Date() } });
 }
 
 export async function dbGetTeam(userId: string): Promise<TeamState | null> {

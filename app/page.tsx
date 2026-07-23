@@ -10,7 +10,7 @@ import { managerStats, marketPlayers, players } from "@/lib/data";
 import { currentGameweek, isDeadlinePassed } from "@/lib/gameweek";
 import { computeTeamGameweekPoints } from "@/lib/scoring";
 import { requireUserId } from "@/lib/auth";
-import { getTeam } from "@/lib/store";
+import { getGlobal, getTeam } from "@/lib/store";
 
 export const metadata: Metadata = { title: "Mon Équipe" };
 
@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const team = await getTeam(await requireUserId());
+  const global = await getGlobal();
 
   if (!team.onboarded) {
     return (
@@ -27,7 +28,7 @@ export default async function Home() {
           title="Créez votre équipe"
           subtitle={`Choisissez 15 joueurs (2 gardiens, 5 défenseurs, 5 milieux, 3 attaquants) avec un budget de 100 M€ — max 3 joueurs par club.`}
         />
-        <SquadBuilder pool={team.catalogue ?? [...players, ...marketPlayers]} />
+        <SquadBuilder pool={global.catalogue ?? [...players, ...marketPlayers]} />
       </main>
     );
   }
@@ -35,7 +36,7 @@ export default async function Home() {
   const teamValue =
     Math.round(team.squad.reduce((acc, p) => acc + p.price, 0) * 10) / 10;
   const chip = activeChip(team.chips);
-  const gameweek = currentGameweek(team);
+  const gameweek = currentGameweek(global);
   const locked = isDeadlinePassed(gameweek);
   const gameweekPoints = computeTeamGameweekPoints(team.squad, team.chips);
 
@@ -68,8 +69,8 @@ export default async function Home() {
           />
           <ChipsPanel chips={team.chips} locked={locked} />
           <DataSyncPanel
-            dataSource={team.dataSource}
-            lastSyncAt={team.lastSyncAt}
+            dataSource={global.dataSource}
+            lastSyncAt={global.lastSyncAt}
             lastSettled={team.gameweekHistory.at(-1) ?? null}
           />
         </div>
